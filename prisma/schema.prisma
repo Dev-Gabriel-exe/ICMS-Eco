@@ -1,0 +1,225 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─────────────────────────────────────────────
+// Enums
+// ─────────────────────────────────────────────
+
+enum Role {
+  admin
+  employee
+}
+
+enum ChecklistStatus {
+  not_started
+  in_progress
+  complete
+}
+
+enum ScoringType {
+  fixed
+  per_unit
+  per_faixa
+  percentage
+}
+
+enum ValidationStatus {
+  pending
+  approved
+  rejected
+}
+
+// ─────────────────────────────────────────────
+// Municípios
+// ─────────────────────────────────────────────
+
+model Municipality {
+  id         String   @id @default(uuid())
+  name       String
+  population Int
+  stateCode  String   @default("PI") @map("state_code")
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  userMunicipalities UserMunicipality[]
+  checklistItems     ChecklistItem[]
+  annualScores       AnnualScore[]
+
+  @@map("municipalities")
+}
+
+// ─────────────────────────────────────────────
+// Usuários
+// ─────────────────────────────────────────────
+
+model User {
+  id                 String   @id @default(uuid())
+  email              String   @unique
+  name               String
+  passwordHash       String   @map("password_hash")
+  role               Role     @default(employee)
+  /// Força troca de senha no primeiro acesso
+  mustChangePassword Boolean  @default(true) @map("must_change_password")
+  isActive           Boolean  @default(true) @map("is_active")
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  userMunicipalities UserMunicipality[]
+  checklistUpdates   ChecklistItem[]    @relation("UpdatedBy")
+  evidences          Evidence[]
+
+  @@map("users")
+}
+
+// ─────────────────────────────────────────────
+// Vínculo usuário ↔ município
+// ─────────────────────────────────────────────
+
+model UserMunicipality {
+  userId         String @map("user_id")
+  municipalityId String @map("municipality_id")
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  municipality Municipality @relation(fields: [municipalityId], references: [id], onDelete: Cascade)
+
+  @@id([userId, municipalityId])
+  @@map("user_municipalities")
+}
+
+// ─────────────────────────────────────────────
+// Certames (anos de avaliação)
+// ─────────────────────────────────────────────
+
+model Certame {
+  id            String   @id @default(uuid())
+  year          Int      @unique
+  periodoInicio DateTime @map("periodo_inicio")
+  periodoFim    DateTime @map("periodo_fim")
+  isActive      Boolean  @default(false) @map("is_active")
+  /// Certame encerrado — não aceita mais alterações
+  isClosed      Boolean  @default(false) @map("is_closed")
+
+  checklistItems ChecklistItem[]
+  annualScores   AnnualScore[]
+
+  @@map("certames")
+}
+
+// ─────────────────────────────────────────────
+// Critérios (seed do Decreto 24.288/2025)
+// ─────────────────────────────────────────────
+
+model Criteria {
+  id            String      @id // ex: "A.1", "B.3"
+  axis          String      // ex: "A"
+  axisName      String      @map("axis_name")
+  axisMinPoints Int         @default(50) @map("axis_min_points")
+  description   String
+  /// Texto do requisito exigido pelo edital
+  requirement   String      @default("")
+  /// Documentação comprobatória exigida pelo edital
+  requiredDocs  String      @default("") @map("required_docs")
+  maxPoints     Int         @map("max_points")
+  scoringType   ScoringType @map("scoring_type")
+  /// Configuração específica por tipo de pontuação (JSON)
+  /// fixed: null
+  /// per_unit: { type: "per_unit", unitValue: number, maxPoints: number }
+  /// per_faixa: { type: "population", faixas: FaixaC5[] } | { type: "territory", ranges: TerritoryRange[] }
+  /// percentage: { type: "percentage", coefficient: number, maxPoints: number }
+  scoringConfig Json?       @map("scoring_config")
+  /// C.1: exige campo de link de mapas além dos documentos
+  hasMapLink    Boolean     @default(false) @map("has_map_link")
+  /// Documentos permanentes (leis, decretos) podem ser reutilizados de certames anteriores
+  isReusable    Boolean     @default(false) @map("is_reusable")
+  /// Validade em anos (null = apenas o período de apuração; 3 = C.2)
+  validYears    Int?        @map("valid_years")
+  order         Int         @default(0)
+
+  checklistItems ChecklistItem[]
+
+  @@map("criteria")
+}
+
+// ─────────────────────────────────────────────
+// Checklist por município + certame + critério
+// ─────────────────────────────────────────────
+
+model ChecklistItem {
+  id              String          @id @default(uuid())
+  municipalityId  String          @map("municipality_id")
+  certameId       String          @map("certame_id")
+  criteriaId      String          @map("criteria_id")
+  status          ChecklistStatus @default(not_started)
+  /// Pontos calculados/reivindicados
+  pointsClaimed   Decimal?        @map("points_claimed") @db.Decimal(6, 2)
+  /// Para critérios per_unit: número de unidades
+  quantity        Int?
+  /// Para critérios percentage: o valor percentual (ex: 75 para 75%)
+  percentageValue Decimal?        @map("percentage_value") @db.Decimal(5, 2)
+  /// Para critérios per_faixa: nível atingido (1, 2 ou 3) — usado em C.5
+  faixaLevel      Int?            @map("faixa_level")
+  /// Apenas para C.1: link do mapa de desmatamento
+  mapLink         String?         @map("map_link")
+  notes           String?
+  updatedBy       String?         @map("updated_by")
+  updatedAt       DateTime        @default(now()) @updatedAt @map("updated_at")
+
+  municipality  Municipality @relation(fields: [municipalityId], references: [id])
+  certame       Certame      @relation(fields: [certameId], references: [id])
+  criteria      Criteria     @relation(fields: [criteriaId], references: [id])
+  updatedByUser User?        @relation("UpdatedBy", fields: [updatedBy], references: [id])
+  evidences     Evidence[]
+
+  @@unique([municipalityId, certameId, criteriaId])
+  @@map("checklist_items")
+}
+
+// ─────────────────────────────────────────────
+// Evidências (arquivos no Cloudflare R2)
+// ─────────────────────────────────────────────
+
+model Evidence {
+  id              String   @id @default(uuid())
+  checklistItemId String   @map("checklist_item_id")
+  fileName        String   @map("file_name")
+  /// URL pública ou presigned do Cloudflare R2
+  fileUrl         String   @map("file_url")
+  /// Chave no bucket R2 (usada para deletar o arquivo)
+  fileKey         String   @map("file_key")
+  fileSizeBytes   Int?     @map("file_size_bytes")
+  fileType        String?  @map("file_type")
+  uploadedBy      String   @map("uploaded_by")
+  uploadedAt      DateTime @default(now()) @map("uploaded_at")
+  validationStatus ValidationStatus @default(pending) @map("validation_status")
+
+  checklistItem ChecklistItem @relation(fields: [checklistItemId], references: [id], onDelete: Cascade)
+  uploader      User          @relation(fields: [uploadedBy], references: [id])
+
+  @@map("evidences")
+
+}
+// ─────────────────────────────────────────────
+// Pontuações históricas (para média ponderada)
+// ─────────────────────────────────────────────
+
+model AnnualScore {
+  id             String  @id @default(uuid())
+  municipalityId String  @map("municipality_id")
+  certameId      String  @map("certame_id")
+  axis           String
+  pointsAnnual   Decimal @map("points_annual") @db.Decimal(6, 2)
+  criteriaMet    Boolean @default(false) @map("criteria_met")
+  finalized      Boolean @default(false)
+
+  municipality Municipality @relation(fields: [municipalityId], references: [id])
+  certame      Certame      @relation(fields: [certameId], references: [id])
+
+  @@unique([municipalityId, certameId, axis])
+  @@map("annual_scores")
+}
