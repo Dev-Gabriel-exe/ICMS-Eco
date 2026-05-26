@@ -1,7 +1,13 @@
 // src/app/(dashboard)/admin/municipios/[id]/page.tsx
+import { notFound } from "next/navigation";
+
 import { requireAdmin } from "@/lib/auth";
+import { db } from "@/lib/db";
+
+import MunicipioEditForm from "./MunicipioEditForm";
 
 export const metadata = { title: "Editar Município" };
+
 
 export default async function EditMunicipioPage({ params }: { params: { id: string } }) {
   await requireAdmin();

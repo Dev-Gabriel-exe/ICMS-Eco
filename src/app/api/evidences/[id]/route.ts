@@ -1,5 +1,10 @@
 // src/app/api/evidences/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
+
+import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
+
+import { deleteFile } from "@/lib/r2";
 import { sendEvidenceReturnedEmail } from "@/lib/brevo";
 
 // ─── PUT /api/evidences/[id] — valida ou devolve evidência ────────────────

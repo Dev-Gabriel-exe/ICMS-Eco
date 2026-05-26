@@ -1,5 +1,7 @@
 // src/app/api/evidences/presigned/route.ts
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
+import { generateFileKey, generatePresignedUploadUrl, validateFile } from "@/lib/r2";
 
 // ─── POST /api/evidences/presigned ─────────────────────────────────────────
 // Gera URL presignada para upload direto do browser para o R2

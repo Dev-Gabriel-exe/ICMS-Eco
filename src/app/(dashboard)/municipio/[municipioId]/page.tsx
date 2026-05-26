@@ -4,10 +4,10 @@ import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import {
-  AXES,
+  
   calculateMunicipalityScore,
   getSeloLabel,
-  getSeloColor,
+  
 } from "@/lib/scoring";
 import { formatPopulation } from "@/lib/utils";
 import type { ChecklistItem, Criteria } from "@/types";

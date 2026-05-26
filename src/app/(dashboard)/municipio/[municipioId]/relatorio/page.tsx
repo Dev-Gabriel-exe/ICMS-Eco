@@ -1,9 +1,22 @@
 // src/app/(dashboard)/municipio/[municipioId]/relatorio/page.tsx
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import type { ChecklistItem, Criteria } from "@/types";
-import { formatDate, formatPopulation } from "@/lib/utils";
-import { ArrowLeft, CheckCircle2, XCircle, Printer } from "lucide-react";
 
+import {
+  ArrowLeft,
+  CheckCircle2,
+  XCircle,
+  Printer,
+} from "lucide-react";
+
+import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
+
+import { calculateMunicipalityScore, getSeloLabel } from "@/lib/scoring";
+
+import { formatDate, formatPopulation } from "@/lib/utils";
+
+import type { ChecklistItem, Criteria } from "@/types";
 export const metadata = { title: "Relatório" };
 
 export default async function RelatorioPage({

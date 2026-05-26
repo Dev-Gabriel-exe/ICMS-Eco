@@ -324,16 +324,32 @@ export function getSeloColor(selo: SeloCategory): string {
 
 export function getStatusLabel(status: ChecklistItem["status"]): string {
   switch (status) {
-    case "complete":    return "Completo";
-    case "in_progress": return "Em andamento";
-    case "not_started": return "Não iniciado";
+    case "complete":
+      return "Completo";
+
+    case "in_progress":
+      return "Em andamento";
+
+    case "not_started":
+      return "Não iniciado";
+
+    default:
+      return "Desconhecido";
   }
 }
 
 export function getStatusColor(status: ChecklistItem["status"]): string {
   switch (status) {
-    case "complete":    return "text-green-700 bg-green-50 border-green-200";
-    case "in_progress": return "text-amber-700 bg-amber-50 border-amber-200";
-    case "not_started": return "text-slate-500 bg-slate-50 border-slate-200";
+    case "complete":
+      return "text-green-700 bg-green-50 border-green-200";
+
+    case "in_progress":
+      return "text-amber-700 bg-amber-50 border-amber-200";
+
+    case "not_started":
+      return "text-slate-500 bg-slate-50 border-slate-200";
+
+    default:
+      return "text-slate-500 bg-slate-50 border-slate-200";
   }
 }

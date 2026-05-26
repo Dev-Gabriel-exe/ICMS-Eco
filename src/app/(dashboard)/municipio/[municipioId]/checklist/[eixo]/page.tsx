@@ -1,8 +1,18 @@
 // src/app/(dashboard)/municipio/[municipioId]/checklist/[eixo]/page.tsx
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import type { Axis, ChecklistItem, Criteria } from "@/types";
+
 import { ArrowLeft } from "lucide-react";
+
 import CriterionRow from "@/components/checklist/CriterionRow";
+
+import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
+
+import { AXIS_NAMES } from "@/lib/constants";
+import { calculateAxisScore } from "@/lib/scoring";
+
+import type { Axis, ChecklistItem, Criteria } from "@/types";
 
 export async function generateMetadata({ params }: { params: { municipioId: string; eixo: string } }) {
   return { title: `Eixo ${params.eixo} — Checklist` };

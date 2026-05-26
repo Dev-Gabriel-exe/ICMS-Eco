@@ -1,7 +1,19 @@
 // src/app/(dashboard)/municipio/[municipioId]/evidencias/page.tsx
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft, FileText, AlertTriangle, CheckCircle2, RotateCcw } from "lucide-react";
 
+import {
+  ArrowLeft,
+  FileText,
+  AlertTriangle,
+  CheckCircle2,
+  RotateCcw,
+} from "lucide-react";
+
+import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
+
+import { formatDateTime, formatFileSize, getFileIcon } from "@/lib/utils";
 export const metadata = { title: "Evidências" };
 
 export default async function EvidenciasPage({
@@ -38,12 +50,18 @@ export default async function EvidenciasPage({
   });
 
   function getEvidenceStatus(ev: (typeof evidences)[0]) {
-    if (!ev.isValid) return "returned";
-    const checks = [ev.hasDate, ev.dateIsInPeriod, ev.isOriginalDoc];
-    if (checks.some((c) => c === false)) return "critical";
-    if (checks.some((c) => c === null)) return "warning";
-    return "valid";
+  switch (ev.validationStatus) {
+    case "approved":
+      return "valid";
+
+    case "rejected":
+      return "critical";
+
+    case "pending":
+    default:
+      return "warning";
   }
+}
 
   const statusConfig = {
     valid: { label: "Válida", icon: CheckCircle2, color: "text-green-600", bg: "bg-green-50 border-green-200" },

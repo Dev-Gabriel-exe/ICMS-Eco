@@ -1,5 +1,9 @@
 // src/app/(dashboard)/admin/certames/page.tsx
 import { requireAdmin } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { formatDate } from "@/lib/utils"; 
+import Link from "next/link";
+import { Plus, CalendarCheck } from "lucide-react";
 
 export const metadata = { title: "Certames" };
 

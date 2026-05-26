@@ -1,6 +1,10 @@
 // src/app/api/users/route.ts
 import { NextRequest, NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
+import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
 import { isValidEmail } from "@/lib/utils";
+import { sendWelcomeEmail } from "@/lib/brevo";
 
 // ─── GET /api/users — lista funcionários (admin) ───────────────────────────
 

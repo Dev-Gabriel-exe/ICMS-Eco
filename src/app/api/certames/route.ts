@@ -1,6 +1,10 @@
 // src/app/api/certames/route.ts
 import { NextRequest, NextResponse } from "next/server";
 
+import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
+
+import { sendCertameOpenedEmail } from "@/lib/mail";
 export async function GET() {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });

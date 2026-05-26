@@ -1,8 +1,20 @@
 // src/app/(dashboard)/municipio/[municipioId]/checklist/page.tsx
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import type { ChecklistItem, Criteria } from "@/types";
-import { CheckCircle2, AlertTriangle, Circle, ChevronRight } from "lucide-react";
 
+import {
+  CheckCircle2,
+  AlertTriangle,
+  Circle,
+  ChevronRight,
+} from "lucide-react";
+
+import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
+
+import { calculateMunicipalityScore } from "@/lib/scoring";
+
+import type { ChecklistItem, Criteria } from "@/types";
 export const metadata = { title: "Checklist" };
 
 export default async function ChecklistOverviewPage({

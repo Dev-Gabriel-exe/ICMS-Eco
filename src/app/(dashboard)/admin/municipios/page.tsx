@@ -2,8 +2,8 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
-import { Building2, Plus } from "lucide-react";
-
+import { Building2, Plus} from "lucide-react";
+import { formatPopulation, formatDate } from "@/lib/utils";
 export const metadata = { title: "Municípios" };
 
 export default async function MunicipiosPage() {

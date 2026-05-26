@@ -1,6 +1,9 @@
 // src/app/api/scores/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import type { ChecklistItem, Criteria } from "@/types";
+import { auth } from "@/lib/auth";
+import { calculateMunicipalityScore } from "@/lib/scoring";
+import { db } from "@/lib/db";
 
 // ─── GET /api/scores?municipalityId=&certameId= ────────────────────────────
 

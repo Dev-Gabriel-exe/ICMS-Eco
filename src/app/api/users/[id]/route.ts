@@ -1,5 +1,7 @@
 // src/app/api/users/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
 
 // ─── GET /api/users/[id] ────────────────────────────────────────────────────
 

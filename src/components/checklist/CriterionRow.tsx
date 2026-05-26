@@ -1,5 +1,7 @@
 // src/components/checklist/CriterionRow.tsx
 "use client";
+import { useState } from "react";
+import { ChevronDown, ChevronUp, FileText, Upload } from "lucide-react";
 import { calculateItemPoints } from "@/lib/scoring";
 import type { ChecklistItem, Criteria } from "@/types";
 import { cn } from "@/lib/utils";

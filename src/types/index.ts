@@ -135,6 +135,7 @@ export interface Evidence {
   fileType: string;
   uploadedById: string;
   uploadedAt: Date;
+  isValid?: boolean;
 
   // Checklist de validação
   hasDate?: boolean | null;

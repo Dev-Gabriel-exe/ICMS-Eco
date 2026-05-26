@@ -1,7 +1,12 @@
 // src/app/api/checklist/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import type { ChecklistItem, Criteria } from "@/types";
 
+import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
+
+import { calculateItemPoints } from "@/lib/scoring";
+
+import type { ChecklistItem, Criteria } from "@/types";
 // ─── GET /api/checklist?municipalityId=&certameId= ─────────────────────────
 
 export async function GET(req: NextRequest) {
