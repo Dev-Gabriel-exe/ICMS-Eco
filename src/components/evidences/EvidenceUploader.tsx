@@ -1,9 +1,8 @@
-// src/components/evidences/EvidenceUploader.tsx
 "use client";
 
 import { useState, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
-import { Upload, X, FileText, Loader2, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Upload, Loader2 } from "lucide-react";
 import { formatFileSize, getFileIcon } from "@/lib/utils";
 import { ALLOWED_FILE_TYPES, MAX_FILE_SIZE_BYTES } from "@/lib/r2";
 import type { Evidence } from "@/types";
@@ -36,7 +35,6 @@ export default function EvidenceUploader({
     async (accepted: File[]) => {
       const newUploads = accepted.map((f) => ({ file: f, status: "pending" as const }));
       setUploads((prev) => [...prev, ...newUploads]);
-
       for (const up of newUploads) {
         await uploadFile(up.file);
       }
@@ -50,38 +48,7 @@ export default function EvidenceUploader({
     );
 
     try {
-      // 1. Gera URL presignada
-      const presignRes = await fetch("/api/evidences/presigned", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          municipalityId,
-          criteriaId,
-          fileName: file.name,
-          fileType: file.type,
-          fileSizeBytes: file.size,
-        }),
-      });
-
-      const presignData = await presignRes.json();
-      if (!presignData.success) throw new Error(presignData.error);
-
-      const { presignedUrl, fileKey } = presignData.data;
-
-      // 2. Upload direto para R2
-      const uploadRes = await fetch(presignedUrl, {
-        method: "PUT",
-        body: file,
-        headers: { "Content-Type": file.type },
-      });
-
-      if (!uploadRes.ok) throw new Error("Falha no upload para o R2");
-
-      // 3. Constrói a URL pública
-      const fileUrl = `${process.env.NEXT_PUBLIC_R2_PUBLIC_URL}/${fileKey}`;
-
-      // 4. Registra no banco (precisa de checklistItemId criado antes ou cria junto)
-      // Se não houver checklistItemId ainda, salvar via checklist primeiro
+      // 1. Garante que existe um checklistItem
       let itemId = checklistItemId;
       if (!itemId) {
         const checkRes = await fetch("/api/checklist", {
@@ -95,23 +62,22 @@ export default function EvidenceUploader({
 
       if (!itemId) throw new Error("Não foi possível obter o item do checklist");
 
-      const evRes = await fetch("/api/evidences", {
+      // 2. Envia o arquivo para a API (que faz upload pro R2 no servidor)
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("municipalityId", municipalityId);
+      formData.append("criteriaId", criteriaId);
+      formData.append("checklistItemId", itemId);
+
+      const uploadRes = await fetch("/api/evidences/upload", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          checklistItemId: itemId,
-          fileName: file.name,
-          fileUrl,
-          fileKey,
-          fileSizeBytes: file.size,
-          fileType: file.type,
-        }),
+        body: formData,
       });
 
-      const evData = await evRes.json();
-      if (!evData.success) throw new Error(evData.error);
+      const uploadData = await uploadRes.json();
+      if (!uploadData.success) throw new Error(uploadData.error);
 
-      setEvidences((prev) => [...prev, evData.data]);
+      setEvidences((prev) => [...prev, uploadData.data]);
       setUploads((prev) =>
         prev.map((u) => (u.file === file ? { ...u, status: "done" } : u))
       );
@@ -140,7 +106,10 @@ export default function EvidenceUploader({
       {evidences.length > 0 && (
         <div className="space-y-2">
           {evidences.map((ev, i) => (
-            <div key={ev.id ?? i} className="flex items-center gap-3 p-3 bg-surface-50 rounded-lg border border-surface-200">
+            <div
+              key={ev.id ?? i}
+              className="flex items-center gap-3 p-3 bg-surface-50 rounded-lg border border-surface-200"
+            >
               <span className="text-lg">{getFileIcon(ev.fileType ?? null)}</span>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-surface-800 truncate">{ev.fileName}</p>
@@ -162,19 +131,26 @@ export default function EvidenceUploader({
       )}
 
       {/* Uploads em progresso */}
-      {uploads.filter((u) => u.status !== "done").map((up, i) => (
-        <div key={i} className="flex items-center gap-3 p-3 bg-surface-50 rounded-lg border border-surface-200">
-          <span className="text-lg">{getFileIcon(up.file.type)}</span>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-surface-800 truncate">{up.file.name}</p>
-            <p className="text-xs text-surface-400">{formatFileSize(up.file.size)}</p>
+      {uploads
+        .filter((u) => u.status !== "done")
+        .map((up, i) => (
+          <div
+            key={i}
+            className="flex items-center gap-3 p-3 bg-surface-50 rounded-lg border border-surface-200"
+          >
+            <span className="text-lg">{getFileIcon(up.file.type)}</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-surface-800 truncate">{up.file.name}</p>
+              <p className="text-xs text-surface-400">{formatFileSize(up.file.size)}</p>
+            </div>
+            {up.status === "uploading" && (
+              <Loader2 className="w-4 h-4 text-brand-600 animate-spin shrink-0" />
+            )}
+            {up.status === "error" && (
+              <span className="text-xs text-red-600 shrink-0">{up.error}</span>
+            )}
           </div>
-          {up.status === "uploading" && <Loader2 className="w-4 h-4 text-brand-600 animate-spin shrink-0" />}
-          {up.status === "error" && (
-            <span className="text-xs text-red-600 shrink-0">{up.error}</span>
-          )}
-        </div>
-      ))}
+        ))}
 
       {/* Dropzone */}
       <div

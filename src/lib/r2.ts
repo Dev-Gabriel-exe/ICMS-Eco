@@ -60,6 +60,24 @@ export function generateFileKey(
 }
 
 // ─────────────────────────────────────────────
+// Gera chave única para arquivo de habilitação
+// Estrutura: habilitacao/{municipalityId}/{docCode}/{timestamp}-{uuid}-{filename}
+// ─────────────────────────────────────────────
+
+export function generateHabilitacaoFileKey(
+  municipalityId: string,
+  docCode: string,
+  fileName: string
+): string {
+  const sanitized = fileName
+    .replace(/[^a-zA-Z0-9._-]/g, "_")
+    .replace(/_+/g, "_");
+  const uuid = crypto.randomUUID();
+  const timestamp = Date.now();
+  return `habilitacao/${municipalityId}/${docCode}/${timestamp}-${uuid}-${sanitized}`;
+}
+
+// ─────────────────────────────────────────────
 // Gera URL presignada para upload direto do browser → R2
 // Válida por 15 minutos
 // ─────────────────────────────────────────────
@@ -83,7 +101,7 @@ export async function generatePresignedUploadUrl(
     Bucket: R2_BUCKET,
     Key: fileKey,
     ContentType: fileType,
-    ContentLength: fileSizeBytes,
+    
     Metadata: {
       "uploaded-at": new Date().toISOString(),
     },

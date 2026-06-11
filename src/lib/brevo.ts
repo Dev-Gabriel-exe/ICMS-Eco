@@ -5,7 +5,7 @@
 // ─────────────────────────────────────────────
 
 const BREVO_API_KEY = process.env.BREVO_API_KEY!;
-const SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL ?? "noreply@rcbambiental.com.br";
+const SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL ?? "jesusiscristoo@gmail.com";
 const SENDER_NAME = process.env.BREVO_SENDER_NAME ?? "ICMS-ECO";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
@@ -232,4 +232,93 @@ export async function sendCertameOpenedEmail(opts: {
     subject: `Certame ${opts.certameYear} aberto — iniciem a documentação`,
     htmlContent: html,
   });
+}
+
+/** Admin: novo arquivo de habilitação adicionado */
+// Adicione estas duas funções no final do seu src/lib/brevo.ts
+
+export async function sendHabilitacaoFileUploadedEmail({
+  to,
+  municipalityName,
+  docCode,
+  fileName,
+  uploadedBy,
+}: {
+  to: { email: string; name?: string }[];
+  municipalityName: string;
+  docCode: string;
+  fileName: string;
+  uploadedBy: string;
+}) {
+  const docLabels: Record<string, string> = {
+    CONSELHO_CRIACAO: "Lei/Decreto de Criação do Conselho",
+    CONSELHO_ATA: "Ata de Reunião do Conselho",
+    SECRETARIA_CRIACAO: "Lei de Criação do Órgão Ambiental",
+    SECRETARIA_NOMEACAO: "Ato de Nomeação do Secretário/Técnicos",
+    SECRETARIA_QUADRO: "Comprovação do Quadro Mínimo",
+    PLANO_DIRETOR: "Plano Diretor com Capítulo Ambiental",
+  };
+  await sendEmail({
+    to,
+    subject: `[ICMS-ECO] Novo documento de habilitação — ${municipalityName}`,
+    htmlContent: `
+      <p>Um novo documento foi enviado para análise.</p>
+      <ul>
+        <li><strong>Município:</strong> ${municipalityName}</li>
+        <li><strong>Documento:</strong> ${docLabels[docCode] ?? docCode}</li>
+        <li><strong>Arquivo:</strong> ${fileName}</li>
+        <li><strong>Enviado por:</strong> ${uploadedBy}</li>
+      </ul>
+      <p><a href="${APP_URL}/admin/municipios">Acessar painel administrativo</a></p>
+    `,
+  });
+}
+
+export async function sendHabilitacaoDocValidatedEmail({
+  to,
+  municipalityName,
+  docLabel,
+  status,
+  rejectReason,
+  validatorName,
+}: {
+  to: { email: string; name?: string }[];
+  municipalityName: string;
+  docCode: string;
+  docLabel: string;
+  status: "approved" | "rejected";
+  rejectReason?: string;
+  validatorName: string;
+}) {
+  const statusText = status === "approved" ? "✅ Aprovado" : "❌ Reprovado";
+  await sendEmail({
+    to,
+    subject: `[ICMS-ECO] Documento ${status === "approved" ? "aprovado" : "reprovado"} — ${municipalityName}`,
+    htmlContent: `
+      <p>O documento de habilitação de <strong>${municipalityName}</strong> foi analisado.</p>
+      <ul>
+        <li><strong>Documento:</strong> ${docLabel}</li>
+        <li><strong>Status:</strong> ${statusText}</li>
+        ${rejectReason ? `<li><strong>Motivo:</strong> ${rejectReason}</li>` : ""}
+        <li><strong>Analisado por:</strong> ${validatorName}</li>
+      </ul>
+      <p><a href="${APP_URL}/municipio">Acessar painel municipal</a></p>
+    `,
+  });
+}
+
+// ─────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────
+
+function getHabDocLabel(code: string): string {
+  const labels: Record<string, string> = {
+    CONSELHO_CRIACAO: "Lei/Decreto de Criação do Conselho",
+    CONSELHO_ATA: "Ata de Reunião do Conselho",
+    SECRETARIA_CRIACAO: "Lei de Criação do Órgão Ambiental",
+    SECRETARIA_NOMEACAO: "Ato de Nomeação do Secretário/Técnicos",
+    SECRETARIA_QUADRO: "Comprovação do Quadro Mínimo de Profissionais",
+    PLANO_DIRETOR: "Plano Diretor com Capítulo Ambiental",
+  };
+  return labels[code] || code;
 }

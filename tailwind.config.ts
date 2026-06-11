@@ -7,6 +7,7 @@ const config: Config = {
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
+
   theme: {
     extend: {
       colors: {
@@ -51,10 +52,8 @@ const config: Config = {
           foreground: "hsl(var(--destructive-foreground))",
         },
 
-        // Sistema de cores do ICMS Ecológico
-        // Verde institucional — ambiental, confiável
         brand: {
-          50:  "#f0fdf4",
+          50: "#f0fdf4",
           100: "#dcfce7",
           200: "#bbf7d0",
           300: "#86efac",
@@ -66,9 +65,9 @@ const config: Config = {
           900: "#14532d",
           950: "#052e16",
         },
-        // Cinza para UI
+
         surface: {
-          50:  "#f8fafc",
+          50: "#f8fafc",
           100: "#f1f5f9",
           200: "#e2e8f0",
           300: "#cbd5e1",
@@ -80,50 +79,61 @@ const config: Config = {
           900: "#0f172a",
           950: "#020617",
         },
-        // Selos
+
         selo: {
-          a:    "#16a34a", // verde
-          b:    "#2563eb", // azul
-          c:    "#d97706", // âmbar
-          none: "#dc2626", // vermelho
+          a: "#16a34a",
+          b: "#2563eb",
+          c: "#d97706",
+          none: "#dc2626",
         },
-        // Status de evidências
+
         evidence: {
-          valid:    "#16a34a",
-          warning:  "#d97706",
+          valid: "#16a34a",
+          warning: "#d97706",
           critical: "#dc2626",
           returned: "#2563eb",
         },
       },
+
+      boxShadow: {
+        brand: "0 4px 20px -4px rgb(22 163 74 / 0.35)",
+      },
+
       fontFamily: {
         sans: ["var(--font-geist-sans)", "system-ui", "sans-serif"],
         mono: ["var(--font-geist-mono)", "monospace"],
       },
+
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+
       keyframes: {
         "fade-in": {
           from: { opacity: "0", transform: "translateY(8px)" },
-          to:   { opacity: "1", transform: "translateY(0)" },
+          to: { opacity: "1", transform: "translateY(0)" },
         },
+
         "slide-in": {
           from: { transform: "translateX(-100%)" },
-          to:   { transform: "translateX(0)" },
+          to: { transform: "translateX(0)" },
         },
+
         pulse: {
           "0%, 100%": { opacity: "1" },
-          "50%":      { opacity: "0.5" },
+          "50%": { opacity: "0.5" },
         },
       },
+
       animation: {
-        "fade-in":  "fade-in 0.3s ease-out",
+        "fade-in": "fade-in 0.3s ease-out",
         "slide-in": "slide-in 0.3s ease-out",
       },
     },
   },
+
   plugins: [],
 };
 

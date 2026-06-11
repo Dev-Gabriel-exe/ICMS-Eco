@@ -9,23 +9,15 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }) {
   const session = await auth();
-
-  if (!session?.user) {
-    redirect("/login");
-  }
-
-  // Primeiro acesso: forçar troca de senha
-  // (verificado via API ao carregar o layout)
+  if (!session?.user) redirect("/login");
 
   return (
-    <div className="flex min-h-screen bg-surface-50">
+    <div className="flex min-h-screen bg-[#f0faf5]">
       <Sidebar
         role={session.user.role as "admin" | "employee"}
         userName={session.user.name ?? "Usuário"}
         userEmail={session.user.email ?? ""}
       />
-
-      {/* Conteúdo principal */}
       <main className="flex-1 ml-64 min-h-screen">
         {children}
       </main>

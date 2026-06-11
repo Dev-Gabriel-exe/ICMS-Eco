@@ -22,9 +22,7 @@ export type ScoringType = "fixed" | "per_unit" | "percentage" | "per_faixa";
 // Configurações de scoring por tipo
 // ─────────────────────────────────────────────
 
-export interface FixedConfig {
-  type: "fixed";
-}
+export interface FixedConfig      { type: "fixed" }
 
 export interface PerUnitConfig {
   type: "per_unit";
@@ -39,7 +37,7 @@ export interface PercentageConfig {
 }
 
 export interface FaixaLevel {
-  level: number;   // 1, 2 ou 3
+  level: number;
   minQty: number;
   points: number;
 }
@@ -74,6 +72,26 @@ export type ScoringConfig =
   | PerFaixaConfigTerritory;
 
 // ─────────────────────────────────────────────
+// Sub-documento exigido por critério
+// ─────────────────────────────────────────────
+
+export interface CriteriaSubDoc {
+  /** UUID gerado pelo banco */
+  id: string;
+  criteriaId: string;
+  /** Código único dentro do critério, ex: "lo_aterro", "contrato_parceria" */
+  code: string;
+  /** Label exibido na UI, ex: "Licença de Operação do Aterro" */
+  label: string;
+  /** Descrição detalhada do que é exigido */
+  description: string;
+  /** true = múltiplos arquivos permitidos (fotos, comprovantes) */
+  acceptsMultiple: boolean;
+  /** Ordem de exibição dentro do critério */
+  order: number;
+}
+
+// ─────────────────────────────────────────────
 // Critério
 // ─────────────────────────────────────────────
 
@@ -91,6 +109,8 @@ export interface Criteria {
   hasMapLink: boolean;
   isReusable: boolean;
   validYears: number | null;
+  /** Sub-documentos específicos exigidos por este critério (opcional — nem todos têm) */
+  subDocs?: CriteriaSubDoc[];
 }
 
 // ─────────────────────────────────────────────
@@ -107,7 +127,7 @@ export interface ChecklistItem {
   status: ItemStatus;
   quantity?: number | null;
   percentageValue?: number | null;
-  faixaLevel?: number | null;    // 1, 2 ou 3 — para C.5
+  faixaLevel?: number | null;
   mapLink?: string | null;
   notes?: string | null;
   pointsClaimed: number;
@@ -120,24 +140,33 @@ export interface ChecklistItem {
 }
 
 // ─────────────────────────────────────────────
-// Evidência
+// Evidência (atualizado para incluir subDocId e campos de validação)
 // ─────────────────────────────────────────────
 
-export type ValidationStatus = "pending" | "valid" | "warning" | "returned" | "replaced";
+/** Alinhado com o enum Prisma ValidationStatus */
+export type ValidationStatus = "pending" | "approved" | "rejected";
 
 export interface Evidence {
   id: string;
   checklistItemId: string;
+  /** ID do sub-documento ao qual esta evidência pertence (null = genérico) */
+  subDocId: string | null;
   fileName: string;
   fileUrl: string;
   fileKey: string;
-  fileSizeBytes: number;
-  fileType: string;
-  uploadedById: string;
-  uploadedAt: Date;
-  isValid?: boolean;
+  fileSizeBytes: number | null;
+  fileType: string | null;
+  uploadedBy: string;
+  uploadedAt: Date | string;
 
-  // Checklist de validação
+  validationStatus: ValidationStatus;
+  /** Comentário do admin ao aprovar ou reprovar */
+  reviewComment: string | null;
+  validatedBy: string | null;
+  validatedAt: Date | string | null;
+
+  // Checklist de qualidade (preenchido pelo admin)
+  isValid?: boolean;
   hasDate?: boolean | null;
   dateIsInPeriod?: boolean | null;
   hasGeotag?: boolean | null;
@@ -146,15 +175,10 @@ export interface Evidence {
   followsAnnexII?: boolean | null;
   isOriginalDoc?: boolean | null;
 
-  // Status de revisão
-  validationStatus: ValidationStatus;
-  returnReason?: string | null;
-  returnedById?: string | null;
-  returnedAt?: Date | null;
-
-  // Relações
-  uploadedBy?: { name: string; email: string };
-  returnedBy?: { name: string } | null;
+  // Relações populadas opcionalmente
+  uploader?: { name: string; email: string };
+  validator?: { name: string } | null;
+  subDoc?: CriteriaSubDoc | null;
 }
 
 // ─────────────────────────────────────────────
@@ -166,8 +190,8 @@ export interface AxisScore {
   axisName: string;
   points: number;
   maxPoints: number;
-  criteriaMet: boolean;   // >= 50 pts
-  progress: number;        // 0-100
+  criteriaMet: boolean;
+  progress: number;
   itemsComplete: number;
   itemsTotal: number;
 }

@@ -1,11 +1,52 @@
-// src/components/checklist/CriterionRow.tsx
 "use client";
+
 import { useState } from "react";
-import { ChevronDown, ChevronUp, FileText, Upload } from "lucide-react";
+import {
+  CheckCircle2, Clock, Circle, XCircle,
+  ChevronRight, FileText,
+} from "lucide-react";
 import { calculateItemPoints } from "@/lib/scoring";
-import type { ChecklistItem, Criteria } from "@/types";
+import type { ChecklistItem, Criteria, Evidence } from "@/types";
 import { cn } from "@/lib/utils";
-import EvidenceUploader from "@/components/evidences/EvidenceUploader";
+import dynamic from "next/dynamic";
+
+const CriterionModal = dynamic(
+  () => import("@/components/checklist/CriterionModal"),
+  { ssr: false }
+);
+
+type SubDocStatus = "not_started" | "pending" | "approved" | "rejected";
+
+function deriveSubDocStatus(evidences: Evidence[]): SubDocStatus {
+  if (evidences.length === 0) return "not_started";
+  if (evidences.some((e) => e.validationStatus === "approved")) return "approved";
+  if (evidences.some((e) => e.validationStatus === "rejected")) return "rejected";
+  return "pending";
+}
+
+const STATUS_PILL = {
+  not_started: { icon: Circle,       cls: "bg-slate-100 text-slate-400",  label: "Não enviado" },
+  pending:     { icon: Clock,        cls: "bg-amber-50  text-amber-600",   label: "Aguardando"  },
+  approved:    { icon: CheckCircle2, cls: "bg-green-50  text-green-600",   label: "Aprovado"    },
+  rejected:    { icon: XCircle,      cls: "bg-red-50    text-red-500",     label: "Reprovado"   },
+} as const;
+
+function DocStatusPill({ label, status }: { label: string; status: SubDocStatus }) {
+  const cfg  = STATUS_PILL[status];
+  const Icon = cfg.icon;
+  return (
+    <span
+      title={label}
+      className={cn(
+        "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold truncate max-w-[140px]",
+        cfg.cls
+      )}
+    >
+      <Icon size={9} className="shrink-0" />
+      <span className="truncate">{label}</span>
+    </span>
+  );
+}
 
 interface Props {
   criterion: Criteria;
@@ -15,275 +56,177 @@ interface Props {
   population: number;
 }
 
-export default function CriterionRow({ criterion, item, municipalityId, certameId, population }: Props) {
-  const [expanded, setExpanded] = useState(false);
-  const [status, setStatus] = useState<ChecklistItem["status"]>(item?.status ?? "not_started");
-  const [quantity, setQuantity] = useState<number | null>(item?.quantity ?? null);
-  const [percentageValue, setPercentageValue] = useState<number | null>(
-    item?.percentageValue != null ? Number(item.percentageValue) : null
-  );
-  const [faixaLevel, setFaixaLevel] = useState<number | null>(item?.faixaLevel ?? null);
-  const [mapLink, setMapLink] = useState(item?.mapLink ?? "");
-  const [notes, setNotes] = useState(item?.notes ?? "");
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
+export default function CriterionRow({
+  criterion,
+  item,
+  municipalityId,
+  certameId,
+  population,
+}: Props) {
+  const [modalOpen, setModalOpen] = useState(false);
+  const [localItem, setLocalItem] = useState<ChecklistItem | undefined>(item);
 
-  // Calcula pontos em tempo real
-  const fakeItem = { status, quantity, percentageValue, faixaLevel } as unknown as ChecklistItem;
+  const evidences  = (localItem?.evidences ?? []) as Evidence[];
+  const hasSubDocs = (criterion.subDocs?.length ?? 0) > 0;
+
+  const fakeItem = {
+    status:          localItem?.status         ?? "not_started",
+    quantity:        localItem?.quantity        ?? null,
+    percentageValue: localItem?.percentageValue ?? null,
+    faixaLevel:      localItem?.faixaLevel      ?? null,
+  } as unknown as ChecklistItem;
   const points = calculateItemPoints(fakeItem, criterion, population);
+  const status = localItem?.status ?? "not_started";
 
-  async function save() {
-    setSaving(true);
-    await fetch("/api/checklist", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        municipalityId,
-        certameId,
-        criteriaId: criterion.id,
-        status,
-        quantity,
-        percentageValue,
-        faixaLevel,
-        mapLink: mapLink || null,
-        notes: notes || null,
-      }),
-    });
-    setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  }
-
-  const statusColors: Record<ChecklistItem["status"], string> = {
-    complete: "border-green-200 bg-green-50",
-    in_progress: "border-amber-200 bg-amber-50",
-    not_started: "border-surface-200 bg-white",
-    returned: "border-blue-200 bg-blue-50",
+  const cardBorder: Record<ChecklistItem["status"], string> = {
+    complete:    "border-green-200  bg-green-50/30",
+    in_progress: "border-amber-200  bg-amber-50/20",
+    not_started: "border-slate-200  bg-white",
+    returned:    "border-blue-200   bg-blue-50/20",
   };
 
-  const statusLabels: Record<ChecklistItem["status"], string> = {
-    complete: "Completo",
+  const statusBadge: Record<ChecklistItem["status"], string> = {
+    complete:    "bg-green-100  text-green-700",
+    in_progress: "bg-amber-100  text-amber-700",
+    not_started: "bg-slate-100  text-slate-500",
+    returned:    "bg-blue-100   text-blue-700",
+  };
+
+  const statusLabel: Record<ChecklistItem["status"], string> = {
+    complete:    "Completo",
     in_progress: "Em andamento",
     not_started: "Não iniciado",
-    returned: "Devolvido",
+    returned:    "Devolvido",
   };
 
-  return (
-    <div className={cn("card border transition-colors", statusColors[status])}>
-      {/* Header da linha */}
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center gap-4 px-5 py-4 text-left"
-      >
-        <div className="w-8 h-8 rounded-lg bg-surface-100 flex items-center justify-center text-xs font-bold text-surface-700 shrink-0">
-          {criterion.id}
-        </div>
+  const subDocSummary = hasSubDocs
+    ? (criterion.subDocs ?? [])
+        .slice()
+        .sort((a, b) => a.order - b.order)
+        .map((sd) => ({
+          id:     sd.id,
+          label:  sd.label,
+          status: deriveSubDocStatus(evidences.filter((e) => e.subDocId === sd.id)),
+        }))
+    : [];
 
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-sm font-medium text-surface-800 truncate">{criterion.description}</span>
-            <div className="flex items-center gap-2 shrink-0">
+  const pendingCount = subDocSummary.filter(
+    (s) => s.status === "not_started" || s.status === "rejected"
+  ).length;
+
+  const allApproved =
+    hasSubDocs && subDocSummary.length > 0 && subDocSummary.every((s) => s.status === "approved");
+
+  function handleClose() {
+    setModalOpen(false);
+  }
+
+  function handleSaved(updated: ChecklistItem) {
+    setLocalItem(updated);
+    // NÃO fecha o modal ao salvar — deixa o usuário fechar quando quiser
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setModalOpen(true)}
+        className={cn(
+          "w-full text-left rounded-2xl border transition-all duration-150",
+          "hover:shadow-md hover:-translate-y-0.5 active:translate-y-0",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400",
+          cardBorder[status]
+        )}
+      >
+        <div className="flex items-center gap-3 px-4 py-3.5">
+          <div
+            className={cn(
+              "w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold shrink-0",
+              status === "complete"
+                ? "bg-green-600 text-white"
+                : status === "in_progress"
+                ? "bg-amber-500 text-white"
+                : "bg-slate-100 text-slate-600"
+            )}
+          >
+            {criterion.id}
+          </div>
+
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-sm font-semibold text-slate-800 leading-tight">
+                {criterion.description}
+              </span>
+              {allApproved && (
+                <CheckCircle2 size={14} className="text-green-500 shrink-0" />
+              )}
+            </div>
+
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
               <span className={cn(
-                "text-sm font-semibold",
-                status === "complete" ? "text-green-700" : "text-surface-500"
+                "inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold",
+                statusBadge[status]
               )}>
-                {points} / {criterion.maxPoints} pts
+                {statusLabel[status]}
               </span>
-              <span className={cn("badge text-xs",
-                status === "complete" ? "badge-green" :
-                status === "in_progress" ? "badge-amber" :
-                status === "returned" ? "badge-blue" : "badge-slate"
-              )}>
-                {statusLabels[status]}
+
+              <span className="text-[11px] text-slate-400">
+                {points > 0 ? (
+                  <span className="text-brand-600 font-semibold">{points}</span>
+                ) : (
+                  <span>0</span>
+                )}
+                {" / "}
+                {criterion.maxPoints} pts
               </span>
+
+              {hasSubDocs && pendingCount > 0 && (
+                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-700 text-[10px] font-semibold">
+                  <FileText size={9} />
+                  {pendingCount} doc{pendingCount > 1 ? "s" : ""} pendente{pendingCount > 1 ? "s" : ""}
+                </span>
+              )}
             </div>
           </div>
-          {!expanded && <p className="text-xs text-surface-400 mt-0.5 truncate">{criterion.requirement}</p>}
+
+          <ChevronRight size={16} className="text-slate-300 shrink-0" />
         </div>
 
-        {expanded ? (
-          <ChevronUp className="w-4 h-4 text-surface-400 shrink-0" />
-        ) : (
-          <ChevronDown className="w-4 h-4 text-surface-400 shrink-0" />
+        {hasSubDocs && subDocSummary.length > 0 && (
+          <div className={cn(
+            "px-4 pb-3 border-t flex flex-wrap gap-1.5",
+            status === "complete"    ? "border-green-100" :
+            status === "in_progress" ? "border-amber-100" : "border-slate-100"
+          )}>
+            <div className="w-full pt-2.5 flex flex-wrap gap-1.5">
+              {subDocSummary.map((sd) => (
+                <DocStatusPill key={sd.id} label={sd.label} status={sd.status} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {!hasSubDocs && (
+          <div className="px-4 pb-3 border-t border-slate-100">
+            <p className="text-xs text-slate-400 mt-2.5 line-clamp-2 leading-relaxed">
+              {criterion.requirement}
+            </p>
+          </div>
         )}
       </button>
 
-      {/* Expandido */}
-      {expanded && (
-        <div className="px-5 pb-5 border-t border-surface-100 pt-4 space-y-4">
-          {/* Requisito */}
-          <div className="p-3 bg-surface-50 rounded-lg">
-            <p className="text-xs font-semibold text-surface-500 uppercase tracking-wide mb-1">Requisito</p>
-            <p className="text-sm text-surface-700">{criterion.requirement}</p>
-          </div>
-
-          {/* Documentos exigidos */}
-          <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg">
-            <p className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-1 flex items-center gap-1">
-              <FileText className="w-3 h-3" /> Documentação comprobatória
-            </p>
-            <p className="text-sm text-blue-800">{criterion.requiredDocs}</p>
-          </div>
-
-          {/* Status */}
-          <div>
-            <label className="label">Status</label>
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value as ChecklistItem["status"])}
-              className="input"
-            >
-              <option value="not_started">Não iniciado</option>
-              <option value="in_progress">Em andamento</option>
-              <option value="complete">Completo</option>
-            </select>
-          </div>
-
-          {/* Per unit */}
-          {criterion.scoringType === "per_unit" && (
-            <div>
-              <label className="label">Quantidade</label>
-              <input
-                type="number"
-                min={0}
-                value={quantity ?? ""}
-                onChange={(e) => setQuantity(e.target.value ? Number(e.target.value) : null)}
-                className="input"
-                placeholder="Número de unidades"
-              />
-              {criterion.scoringConfig && "unitValue" in criterion.scoringConfig && (
-                <p className="text-xs text-surface-400 mt-1">
-                  {criterion.scoringConfig.unitValue} pts por unidade · máx {criterion.maxPoints} pts
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* Percentage (E.1) */}
-          {criterion.scoringType === "percentage" && (
-            <div>
-              <label className="label">Cobertura (%)</label>
-              <input
-                type="number"
-                min={0}
-                max={100}
-                value={percentageValue ?? ""}
-                onChange={(e) => setPercentageValue(e.target.value ? Number(e.target.value) : null)}
-                className="input"
-                placeholder="Ex: 75"
-              />
-              <p className="text-xs text-surface-400 mt-1">
-                Pontos = % × 0,15 · máx {criterion.maxPoints} pts
-              </p>
-            </div>
-          )}
-
-          {/* Per faixa territory (H.1, H.3) */}
-          {criterion.scoringType === "per_faixa" &&
-            criterion.scoringConfig &&
-            "type" in criterion.scoringConfig &&
-            criterion.scoringConfig.type === "territory" && (
-            <div>
-              <label className="label">Percentual do território (%)</label>
-              <input
-                type="number"
-                min={0}
-                max={100}
-                value={percentageValue ?? ""}
-                onChange={(e) => setPercentageValue(e.target.value ? Number(e.target.value) : null)}
-                className="input"
-                placeholder="Ex: 30"
-              />
-            </div>
-          )}
-
-          {/* Per faixa population (C.5) */}
-          {criterion.scoringType === "per_faixa" &&
-            criterion.scoringConfig &&
-            "type" in criterion.scoringConfig &&
-            criterion.scoringConfig.type === "population" && (
-            <div>
-              <label className="label">Nível de mudas comprovado</label>
-              <select
-                value={faixaLevel ?? ""}
-                onChange={(e) => setFaixaLevel(e.target.value ? Number(e.target.value) : null)}
-                className="input"
-              >
-                <option value="">Selecione o nível</option>
-                <option value="1">Nível 1 (8 pts)</option>
-                <option value="2">Nível 2 (12 pts)</option>
-                <option value="3">Nível 3 (30 pts)</option>
-              </select>
-            </div>
-          )}
-
-          {/* Link de mapas (C.1) */}
-          {criterion.hasMapLink && (
-            <div>
-              <label className="label">Link de mapas (SEMARH)</label>
-              <input
-                type="url"
-                value={mapLink}
-                onChange={(e) => setMapLink(e.target.value)}
-                className="input"
-                placeholder="https://..."
-              />
-            </div>
-          )}
-
-          {/* Notas */}
-          <div>
-            <label className="label">Observações internas</label>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={2}
-              className="input resize-none"
-              placeholder="Notas ou pendências..."
-            />
-          </div>
-
-          {/* Pontos calculados */}
-          <div className={cn(
-            "flex items-center justify-between p-3 rounded-lg",
-            points > 0 ? "bg-green-50 border border-green-200" : "bg-surface-50 border border-surface-200"
-          )}>
-            <span className="text-sm text-surface-600">Pontos calculados:</span>
-            <span className={cn("text-lg font-bold", points > 0 ? "text-green-700" : "text-surface-400")}>
-              {points} pts
-            </span>
-          </div>
-
-          {/* Botão salvar */}
-          <div className="flex items-center gap-3">
-            <button
-              onClick={save}
-              disabled={saving}
-              className="btn btn-primary"
-            >
-              {saving ? "Salvando..." : saved ? "✓ Salvo!" : "Salvar"}
-            </button>
-          </div>
-
-          {/* Upload de evidências */}
-          <div className="border-t border-surface-100 pt-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Upload className="w-4 h-4 text-surface-500" />
-              <span className="text-sm font-semibold text-surface-700">Evidências</span>
-              {item?.evidences && item.evidences.length > 0 && (
-                <span className="badge badge-slate">{item.evidences.length} arquivo(s)</span>
-              )}
-            </div>
-            <EvidenceUploader
-              checklistItemId={item?.id}
-              criteriaId={criterion.id}
-              municipalityId={municipalityId}
-              certameId={certameId}
-              existingEvidences={item?.evidences ?? []}
-            />
-          </div>
-        </div>
+      {/* Modal renderizado fora do button, no portal */}
+      {modalOpen && (
+        <CriterionModal
+          criterion={criterion}
+          item={localItem}
+          municipalityId={municipalityId}
+          certameId={certameId}
+          population={population}
+          onClose={handleClose}
+          onSaved={handleSaved}
+        />
       )}
-    </div>
+    </>
   );
 }

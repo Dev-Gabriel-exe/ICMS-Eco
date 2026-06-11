@@ -1,0 +1,1 @@
+{"rules":[{"allowedOrigins":["http://localhost:3000"],"allowedMethods":["GET","PUT","HEAD"],"allowedHeaders":["*"],"maxAgeSeconds":3600}]}

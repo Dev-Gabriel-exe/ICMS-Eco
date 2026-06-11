@@ -46,6 +46,64 @@ enum NotifType {
   CERTAME_OPENED
 }
 
+enum HabDocCode {
+  CONSELHO_CRIACAO
+  CONSELHO_ATA
+  SECRETARIA_CRIACAO
+  SECRETARIA_NOMEACAO
+  SECRETARIA_QUADRO
+  PLANO_DIRETOR
+}
+
+enum HabDocStatus {
+  not_started
+  pending
+  approved
+  rejected
+}
+
+enum AuditAction {
+  MUNICIPALITY_CREATED
+  MUNICIPALITY_UPDATED
+
+  USER_CREATED
+  USER_UPDATED
+
+  EVIDENCE_UPLOADED
+  EVIDENCE_APPROVED
+  EVIDENCE_RETURNED
+  EVIDENCE_REJECTED
+  EVIDENCE_DELETED
+
+  CHECKLIST_UPDATED
+
+  CERTAME_CREATED
+  CERTAME_UPDATED
+  CERTAME_CLOSED
+
+  HABILITACAO_FILE_UPLOADED
+  HABILITACAO_DOC_APPROVED
+  HABILITACAO_DOC_REJECTED
+}
+
+// ─────────────────────────────────────────────
+// Auditoria
+// ─────────────────────────────────────────────
+
+model AuditLog {
+  id         String      @id @default(uuid())
+  userId     String
+  action     AuditAction
+  entityType String
+  entityId   String
+  description String?
+  createdAt  DateTime    @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+}
+
 // ─────────────────────────────────────────────
 // Municípios
 // ─────────────────────────────────────────────
@@ -54,9 +112,7 @@ model Municipality {
   id         String   @id @default(uuid())
   name       String
   population Int
-
   ibgeCode   String?  @map("ibge_code")
-
   stateCode  String   @default("PI") @map("state_code")
   isActive   Boolean  @default(true) @map("is_active")
   createdAt  DateTime @default(now()) @map("created_at")
@@ -64,6 +120,7 @@ model Municipality {
   userMunicipalities UserMunicipality[]
   checklistItems     ChecklistItem[]
   annualScores       AnnualScore[]
+  habilitacaoDocs    HabilitacaoDoc[]
 
   @@map("municipalities")
 }
@@ -78,15 +135,18 @@ model User {
   name               String
   passwordHash       String   @map("password_hash")
   role               Role     @default(employee)
-  /// Força troca de senha no primeiro acesso
   mustChangePassword Boolean  @default(true) @map("must_change_password")
   isActive           Boolean  @default(true) @map("is_active")
   createdAt          DateTime @default(now()) @map("created_at")
 
+  auditLogs          AuditLog[]
   userMunicipalities UserMunicipality[]
   checklistUpdates   ChecklistItem[]    @relation("UpdatedBy")
-  evidences          Evidence[]
+  evidences          Evidence[]         @relation("EvidenceUploader")
+  validatedEvidences Evidence[]         @relation("EvidenceValidator")
   notifications      Notification[]
+  habValidations     HabilitacaoDoc[]   @relation("HabValidatedBy")
+  habUploads         HabilitacaoFile[]  @relation("HabFileUploader")
 
   @@map("users")
 }
@@ -116,11 +176,11 @@ model Certame {
   periodoInicio DateTime @map("periodo_inicio")
   periodoFim    DateTime @map("periodo_fim")
   isActive      Boolean  @default(false) @map("is_active")
-  /// Certame encerrado — não aceita mais alterações
   isClosed      Boolean  @default(false) @map("is_closed")
 
-  checklistItems ChecklistItem[]
-  annualScores   AnnualScore[]
+  checklistItems  ChecklistItem[]
+  annualScores    AnnualScore[]
+  habilitacaoDocs HabilitacaoDoc[]
 
   @@map("certames")
 }
@@ -130,34 +190,50 @@ model Certame {
 // ─────────────────────────────────────────────
 
 model Criteria {
-  id            String      @id // ex: "A.1", "B.3"
-  axis          String      // ex: "A"
+  id            String      @id
+  axis          String
   axisName      String      @map("axis_name")
   axisMinPoints Int         @default(50) @map("axis_min_points")
   description   String
-  /// Texto do requisito exigido pelo edital
   requirement   String      @default("")
-  /// Documentação comprobatória exigida pelo edital
   requiredDocs  String      @default("") @map("required_docs")
   maxPoints     Int         @map("max_points")
   scoringType   ScoringType @map("scoring_type")
-  /// Configuração específica por tipo de pontuação (JSON)
-  /// fixed: null
-  /// per_unit: { type: "per_unit", unitValue: number, maxPoints: number }
-  /// per_faixa: { type: "population", faixas: FaixaC5[] } | { type: "territory", ranges: TerritoryRange[] }
-  /// percentage: { type: "percentage", coefficient: number, maxPoints: number }
   scoringConfig Json?       @map("scoring_config")
-  /// C.1: exige campo de link de mapas além dos documentos
   hasMapLink    Boolean     @default(false) @map("has_map_link")
-  /// Documentos permanentes (leis, decretos) podem ser reutilizados de certames anteriores
   isReusable    Boolean     @default(false) @map("is_reusable")
-  /// Validade em anos (null = apenas o período de apuração; 3 = C.2)
   validYears    Int?        @map("valid_years")
   order         Int         @default(0)
 
   checklistItems ChecklistItem[]
+  subDocs        CriteriaSubDoc[]
 
   @@map("criteria")
+}
+
+// ─────────────────────────────────────────────
+// Sub-documentos exigidos por critério
+// ─────────────────────────────────────────────
+
+model CriteriaSubDoc {
+  id          String  @id @default(uuid())
+  criteriaId  String  @map("criteria_id")
+  /// Código interno único por critério ex: "lo_aterro", "contrato_parceria"
+  code        String
+  /// Label exibido na UI
+  label       String
+  /// Descrição detalhada do que é exigido
+  description String  @default("")
+  /// Aceita múltiplos arquivos (fotos, comprovantes múltiplos etc.)
+  acceptsMultiple Boolean @default(false) @map("accepts_multiple")
+  /// Ordem de exibição dentro do critério
+  order       Int     @default(0)
+
+  criteria  Criteria   @relation(fields: [criteriaId], references: [id])
+  evidences Evidence[]
+
+  @@unique([criteriaId, code])
+  @@map("criteria_sub_docs")
 }
 
 // ─────────────────────────────────────────────
@@ -170,15 +246,10 @@ model ChecklistItem {
   certameId       String          @map("certame_id")
   criteriaId      String          @map("criteria_id")
   status          ChecklistStatus @default(not_started)
-  /// Pontos calculados/reivindicados
   pointsClaimed   Decimal?        @map("points_claimed") @db.Decimal(6, 2)
-  /// Para critérios per_unit: número de unidades
   quantity        Int?
-  /// Para critérios percentage: o valor percentual (ex: 75 para 75%)
   percentageValue Decimal?        @map("percentage_value") @db.Decimal(5, 2)
-  /// Para critérios per_faixa: nível atingido (1, 2 ou 3) — usado em C.5
   faixaLevel      Int?            @map("faixa_level")
-  /// Apenas para C.1: link do mapa de desmatamento
   mapLink         String?         @map("map_link")
   notes           String?
   updatedBy       String?         @map("updated_by")
@@ -199,20 +270,29 @@ model ChecklistItem {
 // ─────────────────────────────────────────────
 
 model Evidence {
-  id               String   @id @default(uuid())
-  checklistItemId  String   @map("checklist_item_id")
-  fileName         String   @map("file_name")
-  fileUrl          String   @map("file_url")
-  fileKey          String   @map("file_key")
-  fileSizeBytes    Int?     @map("file_size_bytes")
-  fileType         String?  @map("file_type")
-  uploadedBy       String   @map("uploaded_by")
-  uploadedAt       DateTime @default(now()) @map("uploaded_at")
+  id              String   @id @default(uuid())
+  checklistItemId String   @map("checklist_item_id")
+  /// Sub-documento ao qual esta evidência pertence (null = genérico)
+  subDocId        String?  @map("sub_doc_id")
+  fileName        String   @map("file_name")
+  fileUrl         String   @map("file_url")
+  fileKey         String   @map("file_key")
+  fileSizeBytes   Int?     @map("file_size_bytes")
+  fileType        String?  @map("file_type")
+  uploadedBy      String   @map("uploaded_by")
+  uploadedAt      DateTime @default(now()) @map("uploaded_at")
 
   validationStatus ValidationStatus @default(pending) @map("validation_status")
 
-  // ✅ novos campos
-  isValid                Boolean @default(true) @map("is_valid")
+  /// Comentário opcional do admin ao aprovar ou rejeitar
+  reviewComment   String?   @map("review_comment")
+  /// Quem fez a validação
+  validatedBy     String?   @map("validated_by")
+  /// Quando foi validado
+  validatedAt     DateTime? @map("validated_at")
+
+  // Checklist de qualidade (preenchido pelo admin)
+  isValid                Boolean  @default(true) @map("is_valid")
   hasDate                Boolean? @map("has_date")
   dateIsInPeriod         Boolean? @map("date_is_in_period")
   hasGeotag              Boolean? @map("has_geotag")
@@ -221,27 +301,65 @@ model Evidence {
   followsAnnexII         Boolean? @map("follows_annex_ii")
   isOriginalDoc          Boolean? @map("is_original_doc")
 
-  checklistItem ChecklistItem @relation(fields: [checklistItemId], references: [id], onDelete: Cascade)
-  uploader      User          @relation(fields: [uploadedBy], references: [id])
+  checklistItem ChecklistItem  @relation(fields: [checklistItemId], references: [id], onDelete: Cascade)
+  subDoc        CriteriaSubDoc? @relation(fields: [subDocId], references: [id])
+  uploader      User            @relation("EvidenceUploader", fields: [uploadedBy], references: [id])
+  validator     User?           @relation("EvidenceValidator", fields: [validatedBy], references: [id])
 
   @@map("evidences")
 }
 
+model HabilitacaoDoc {
+  id             String       @id @default(uuid())
+  municipalityId String       @map("municipality_id")
+  certameId      String       @map("certame_id")
+  code           HabDocCode
+  status         HabDocStatus @default(not_started)
+  rejectReason   String?      @map("reject_reason")
+  validatedBy    String?      @map("validated_by")
+  validatedAt    DateTime?    @map("validated_at")
+  updatedAt      DateTime     @default(now()) @updatedAt @map("updated_at")
+
+  municipality Municipality    @relation(fields: [municipalityId], references: [id])
+  certame      Certame         @relation(fields: [certameId], references: [id])
+  validator    User?           @relation("HabValidatedBy", fields: [validatedBy], references: [id])
+  files        HabilitacaoFile[]
+
+  @@unique([municipalityId, certameId, code])
+  @@map("habilitacao_docs")
+}
+
+model HabilitacaoFile {
+  id            String   @id @default(uuid())
+  habDocId      String   @map("hab_doc_id")
+  fileName      String   @map("file_name")
+  fileUrl       String   @map("file_url")
+  fileKey       String   @map("file_key")
+  fileSizeBytes Int?     @map("file_size_bytes")
+  fileType      String?  @map("file_type")
+  uploadedBy    String   @map("uploaded_by")
+  uploadedAt    DateTime @default(now()) @map("uploaded_at")
+
+  habDoc   HabilitacaoDoc @relation(fields: [habDocId], references: [id], onDelete: Cascade)
+  uploader User           @relation("HabFileUploader", fields: [uploadedBy], references: [id])
+
+  @@map("habilitacao_files")
+}
+
 model Notification {
-  id        String   @id @default(uuid())
-  userId    String   @map("user_id")
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
   type      NotifType
   title     String
   body      String
-  isRead    Boolean  @default(false) @map("is_read")
-  entityId  String?  @map("entity_id")
-  createdAt DateTime @default(now()) @map("created_at")
+  isRead    Boolean   @default(false) @map("is_read")
+  entityId  String?   @map("entity_id")
+  createdAt DateTime  @default(now()) @map("created_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("notifications")
 }
-
 
 // ─────────────────────────────────────────────
 // Pontuações históricas (para média ponderada)

@@ -2,10 +2,10 @@
 import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
 import Link from "next/link";
-import { formatDate } from "@/lib/utils";
-import { UserCheck, UserX, Mail } from "lucide-react";
+import { Users, Plus } from "lucide-react";
+import { UsuariosTable } from "./UsuariosTable";
 
-export const metadata = { title: "Usuários" };
+export const metadata = { title: "Funcionários" };
 
 export default async function UsuariosPage() {
   await requireAdmin();
@@ -20,99 +20,101 @@ export default async function UsuariosPage() {
     },
   });
 
+  const activeCount = users.filter((u) => u.isActive).length;
+
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-xl font-semibold text-surface-900">Funcionários</h1>
-          <p className="text-sm text-surface-500 mt-0.5">
-            Gerencie o acesso da equipe ao sistema
-          </p>
+    <div className="min-h-screen bg-[#f0faf5] p-6 md:p-10 relative">
+      {/* Blobs */}
+      <div
+        className="pointer-events-none fixed top-0 right-0 w-[500px] h-[500px] opacity-30"
+        style={{ background: "radial-gradient(circle at 80% 20%, #6ee7b7 0%, transparent 60%)", filter: "blur(60px)" }}
+      />
+      <div
+        className="pointer-events-none fixed bottom-0 left-0 w-[400px] h-[400px] opacity-20"
+        style={{ background: "radial-gradient(circle at 20% 80%, #34d399 0%, transparent 60%)", filter: "blur(50px)" }}
+      />
+
+      <div className="relative max-w-5xl mx-auto">
+
+        {/* Header */}
+        <div
+          className="flex items-center justify-between mb-7"
+          style={{ animation: "fadeSlideUp 0.4s ease both" }}
+        >
+          <div className="flex items-center gap-3">
+            <div
+              className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"
+              style={{ background: "linear-gradient(135deg, #059669 0%, #10b981 100%)" }}
+            >
+              <Users className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Funcionários</h1>
+              <p className="text-sm text-slate-500 mt-0.5">
+                <span className="font-semibold text-emerald-700">{activeCount}</span> ativo{activeCount !== 1 ? "s" : ""}
+                <span className="text-slate-400"> · {users.length} no total</span>
+              </p>
+            </div>
+          </div>
+
+          <Link
+            href="/admin/usuarios/novo"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white transition-all duration-200 hover:-translate-y-px active:scale-[0.98]"
+            style={{
+              background: "linear-gradient(135deg, #059669 0%, #10b981 100%)",
+              boxShadow: "0 4px 14px -4px rgba(5,150,105,0.5)",
+            }}
+          >
+            <Plus className="w-4 h-4" />
+            Novo funcionário
+          </Link>
         </div>
-        <Link href="/admin/usuarios/novo" className="btn btn-primary">
-          + Novo funcionário
-        </Link>
+
+        {/* Stat cards */}
+        <div
+          className="grid grid-cols-3 gap-4 mb-5"
+          style={{ animation: "fadeSlideUp 0.4s ease both", animationDelay: "60ms" }}
+        >
+          {[
+            { label: "Total",    value: users.length,               color: "text-slate-700",   bg: "bg-white border-slate-200"        },
+            { label: "Ativos",   value: activeCount,                color: "text-emerald-700", bg: "bg-emerald-50 border-emerald-200" },
+            { label: "Inativos", value: users.length - activeCount, color: "text-amber-700",   bg: "bg-amber-50 border-amber-200"     },
+          ].map(s => (
+            <div key={s.label} className={`rounded-2xl border px-5 py-4 ${s.bg}`}>
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">{s.label}</p>
+              <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Card tabela */}
+        <div
+          className="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden"
+          style={{ animation: "fadeSlideUp 0.45s ease both", animationDelay: "120ms" }}
+        >
+          {/* Header do card */}
+          <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-emerald-50 to-white">
+            <div className="flex items-center gap-2">
+              <Users className="w-3.5 h-3.5 text-emerald-600" />
+              <span className="text-xs font-bold text-emerald-700 uppercase tracking-widest">
+                Equipe cadastrada
+              </span>
+            </div>
+            <span className="text-xs text-slate-400 font-medium">
+              {users.length} {users.length === 1 ? "registro" : "registros"}
+            </span>
+          </div>
+
+          <UsuariosTable initialData={users} />
+        </div>
       </div>
 
-      <div className="card">
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Nome</th>
-              <th>E-mail</th>
-              <th>Municípios vinculados</th>
-              <th>Status</th>
-              <th>Cadastro</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.length === 0 && (
-              <tr>
-                <td colSpan={6} className="text-center text-surface-400 py-10">
-                  Nenhum funcionário cadastrado ainda.
-                </td>
-              </tr>
-            )}
-            {users.map((u) => (
-              <tr key={u.id}>
-                <td>
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-full bg-brand-100 flex items-center justify-center">
-                      <span className="text-brand-700 text-xs font-semibold">
-                        {u.name.split(" ").map((n) => n[0]).slice(0, 2).join("")}
-                      </span>
-                    </div>
-                    <span className="font-medium text-surface-800">{u.name}</span>
-                  </div>
-                </td>
-                <td>
-                  <div className="flex items-center gap-1.5 text-surface-500">
-                    <Mail className="w-3.5 h-3.5" />
-                    {u.email}
-                  </div>
-                </td>
-                <td>
-                  <div className="flex flex-wrap gap-1">
-                    {u.userMunicipalities.length === 0 ? (
-                      <span className="text-surface-400 text-xs">Nenhum</span>
-                    ) : (
-                      u.userMunicipalities.slice(0, 3).map(({ municipality }) => (
-                        <span key={municipality.name} className="badge badge-slate">
-                          {municipality.name}
-                        </span>
-                      ))
-                    )}
-                    {u.userMunicipalities.length > 3 && (
-                      <span className="badge badge-slate">+{u.userMunicipalities.length - 3}</span>
-                    )}
-                  </div>
-                </td>
-                <td>
-                  {u.isActive ? (
-                    <span className="badge badge-green">
-                      <UserCheck className="w-3 h-3" /> Ativo
-                    </span>
-                  ) : (
-                    <span className="badge badge-slate">
-                      <UserX className="w-3 h-3" /> Inativo
-                    </span>
-                  )}
-                </td>
-                <td className="text-surface-400 text-xs">{formatDate(u.createdAt)}</td>
-                <td>
-                  <Link
-                    href={`/admin/usuarios/${u.id}`}
-                    className="text-brand-600 text-sm font-medium hover:text-brand-700"
-                  >
-                    Editar
-                  </Link>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <style>{`
+        @keyframes fadeSlideUp {
+          from { opacity: 0; transform: translateY(10px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   );
 }
