@@ -2,123 +2,120 @@
 import NextAuth, { DefaultSession } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
-
 import { db } from "@/lib/db";
-
+import { logAction } from "@/lib/audit";
 import type { Role } from "@/types";
-
-// ─────────────────────────────────────────────
-// Extensão de tipos
-// ─────────────────────────────────────────────
 
 declare module "next-auth" {
   interface Session {
     user: {
       id: string;
       role: Role;
+      avatarUrl?: string | null;
     } & DefaultSession["user"];
   }
 
+  
   interface User {
     id: string;
     role: Role;
+    avatarUrl?: string | null;
   }
 }
-
-// NÃO use "next-auth/jwt" no v5
-
-// ─────────────────────────────────────────────
-// Configuração
-// ─────────────────────────────────────────────
-
-export const {
-  handlers,
-  auth,
-  signIn,
-  signOut,
-} = NextAuth({
+declare module "next-auth/jwt" {
+  interface JWT {
+    id: string;
+    role: Role;
+    avatarUrl?: string | null;
+  }
+}
+export const { handlers, auth, signIn, signOut } = NextAuth({
   session: {
     strategy: "jwt",
     maxAge: 8 * 60 * 60,
   },
-
   pages: {
     signIn: "/login",
     error: "/login",
   },
-
   providers: [
     Credentials({
       name: "credentials",
-
       credentials: {
-        email: {
-          label: "E-mail",
-          type: "email",
-        },
-
-        password: {
-          label: "Senha",
-          type: "password",
-        },
+        email:    { label: "E-mail", type: "email"    },
+        password: { label: "Senha",  type: "password" },
       },
-
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          return null;
-        }
+        if (!credentials?.email || !credentials?.password) return null;
 
         const user = await db.user.findUnique({
-          where: {
-            email: String(credentials.email)
-              .toLowerCase()
-              .trim(),
-          },
+          where: { email: String(credentials.email).toLowerCase().trim() },
         });
 
-        if (!user) return null;
+        if (!user || !user.isActive) return null;
 
         const validPassword = await bcrypt.compare(
           String(credentials.password),
           user.passwordHash
         );
-
         if (!validPassword) return null;
 
+        // Registra login no audit
+        try {
+          await logAction({
+            userId: user.id,
+            action: "USER_LOGIN",
+            entityType: "User",
+            entityId: user.id,
+            description: `Login realizado por ${user.name}`,
+          });
+        } catch { /* silencioso */ }
+
         return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role as Role,
+          id:        user.id,
+          name:      user.name,
+          email:     user.email,
+          role:      user.role as Role,
+          avatarUrl: user.avatarUrl ?? null,
         };
       },
     }),
   ],
-
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id;
-        token.role = user.role;
+        token.id        = user.id;
+        token.role      = user.role;
+        token.avatarUrl = user.avatarUrl;
       }
-
       return token;
     },
-
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.id as string;
-        session.user.role = token.role as Role;
+        session.user.id        = token.id as string;
+        session.user.role      = token.role as Role;
+        session.user.avatarUrl = token.avatarUrl as string | null;
       }
-
       return session;
+    },
+  },
+  events: {
+    async signOut({ token }) {
+      if (!token?.id) return;
+      try {
+        await logAction({
+          userId:      token.id as string,
+          action:      "USER_LOGOUT",
+          entityType:  "User",
+          entityId:    token.id as string,
+          description: "Logout realizado",
+        });
+      } catch { /* silencioso */ }
     },
   },
 });
 
-// ─────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────
+// ─── Helpers ────────────────────────────────────────────────────────────────
 
 export async function getAuthSession() {
   return auth();
@@ -126,41 +123,33 @@ export async function getAuthSession() {
 
 export async function requireAdmin() {
   const session = await auth();
-
   if (!session?.user || session.user.role !== "admin") {
     throw new Error("Acesso restrito a administradores");
   }
-
   return session;
 }
 
-export async function requireMunicipalityAccess(
-  municipalityId: string
-) {
+/** Aceita admin e reviewer */
+export async function requireReviewer() {
   const session = await auth();
-
-  if (!session?.user) {
-    throw new Error("Não autenticado");
+  if (!session?.user || !["admin", "reviewer"].includes(session.user.role)) {
+    throw new Error("Acesso restrito a revisores e administradores");
   }
+  return session;
+}
 
-  // Admin acessa tudo
-  if (session.user.role === "admin") {
-    return session;
-  }
+export async function requireMunicipalityAccess(municipalityId: string) {
+  const session = await auth();
+  if (!session?.user) throw new Error("Não autenticado");
 
-  // Funcionário só acessa município vinculado
+  if (session.user.role === "admin") return session;
+
   const link = await db.userMunicipality.findUnique({
     where: {
-      userId_municipalityId: {
-        userId: session.user.id,
-        municipalityId,
-      },
+      userId_municipalityId: { userId: session.user.id, municipalityId },
     },
   });
-
-  if (!link) {
-    throw new Error("Sem acesso a este município");
-  }
+  if (!link) throw new Error("Sem acesso a este município");
 
   return session;
 }

@@ -1,5 +1,4 @@
 // src/app/api/evidences/[id]/route.ts
-
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -7,8 +6,11 @@ import { logAction } from "@/lib/audit";
 import { deleteFile } from "@/lib/r2";
 import { sendEvidenceReturnedEmail } from "@/lib/brevo";
 
+function canReview(role: string) {
+  return role === "admin" || role === "reviewer";
+}
+
 // ─── PUT /api/evidences/[id] ───────────────────────────────────────────────
-// Ações: "approve" | "reject" | "validate" (checklist de qualidade)
 
 export async function PUT(
   req: NextRequest,
@@ -20,11 +22,11 @@ export async function PUT(
   }
 
   const { id } = await params;
-  const body = await req.json();
+  const body   = await req.json();
 
   // ── APROVAR ────────────────────────────────────────────────────────────────
   if (body.action === "approve") {
-    if (session.user.role !== "admin") {
+    if (!canReview(session.user.role)) {
       return NextResponse.json({ success: false, error: "Acesso negado" }, { status: 403 });
     }
 
@@ -32,19 +34,19 @@ export async function PUT(
       where: { id },
       data: {
         validationStatus: "approved",
-        isValid: true,
-        reviewComment: body.comment?.trim() || null,
-        validatedBy: session.user.id,
-        validatedAt: new Date(),
+        isValid:          true,
+        reviewComment:    body.comment?.trim() || null,
+        validatedBy:      session.user.id,
+        validatedAt:      new Date(),
       },
       select: { id: true, fileName: true },
     });
 
     await logAction({
-      userId: session.user.id,
-      action: "EVIDENCE_APPROVED",
-      entityType: "Evidence",
-      entityId: evidence.id,
+      userId:      session.user.id,
+      action:      "EVIDENCE_APPROVED",
+      entityType:  "Evidence",
+      entityId:    evidence.id,
       description: `Aprovou a evidência "${evidence.fileName}"${body.comment ? ` — "${body.comment}"` : ""}`,
     });
 
@@ -53,7 +55,7 @@ export async function PUT(
 
   // ── REJEITAR ───────────────────────────────────────────────────────────────
   if (body.action === "reject") {
-    if (session.user.role !== "admin") {
+    if (!canReview(session.user.role)) {
       return NextResponse.json({ success: false, error: "Acesso negado" }, { status: 403 });
     }
 
@@ -61,16 +63,16 @@ export async function PUT(
       where: { id },
       data: {
         validationStatus: "rejected",
-        isValid: false,
-        reviewComment: body.comment?.trim() || null,
-        validatedBy: session.user.id,
-        validatedAt: new Date(),
+        isValid:          false,
+        reviewComment:    body.comment?.trim() || null,
+        validatedBy:      session.user.id,
+        validatedAt:      new Date(),
       },
       include: {
-        uploader: { select: { email: true, name: true } },
+        uploader:     { select: { email: true, name: true } },
         checklistItem: {
           include: {
-            criteria: { select: { id: true, description: true } },
+            criteria:     { select: { id: true, description: true } },
             municipality: { select: { name: true } },
           },
         },
@@ -78,20 +80,19 @@ export async function PUT(
     });
 
     await logAction({
-      userId: session.user.id,
-      action: "EVIDENCE_REJECTED",
-      entityType: "Evidence",
-      entityId: evidence.id,
+      userId:      session.user.id,
+      action:      "EVIDENCE_REJECTED",
+      entityType:  "Evidence",
+      entityId:    evidence.id,
       description: `Rejeitou a evidência "${evidence.fileName}"${body.comment ? ` — "${body.comment}"` : ""}`,
     });
 
-    // Notifica o funcionário por e-mail
     try {
       await sendEvidenceReturnedEmail({
-        to: { email: evidence.uploader.email, name: evidence.uploader.name },
-        criterionId: evidence.checklistItem.criteria.id,
-        criterionDesc: evidence.checklistItem.criteria.description,
-        returnReason: body.comment ?? "Motivo não informado",
+        to:              { email: evidence.uploader.email, name: evidence.uploader.name },
+        criterionId:     evidence.checklistItem.criteria.id,
+        criterionDesc:   evidence.checklistItem.criteria.description,
+        returnReason:    body.comment ?? "Motivo não informado",
         municipalityName: evidence.checklistItem.municipality.name,
       });
     } catch (err) {
@@ -101,9 +102,9 @@ export async function PUT(
     return NextResponse.json({ success: true, data: evidence });
   }
 
-  // ── DEVOLVER (legado — mantido para compatibilidade) ───────────────────────
+  // ── DEVOLVER (legado) ──────────────────────────────────────────────────────
   if (body.action === "return") {
-    if (session.user.role !== "admin") {
+    if (!canReview(session.user.role)) {
       return NextResponse.json({ success: false, error: "Acesso negado" }, { status: 403 });
     }
 
@@ -111,16 +112,16 @@ export async function PUT(
       where: { id },
       data: {
         validationStatus: "rejected",
-        isValid: false,
-        reviewComment: body.reason?.trim() || null,
-        validatedBy: session.user.id,
-        validatedAt: new Date(),
+        isValid:          false,
+        reviewComment:    body.reason?.trim() || null,
+        validatedBy:      session.user.id,
+        validatedAt:      new Date(),
       },
       include: {
-        uploader: { select: { email: true, name: true } },
+        uploader:     { select: { email: true, name: true } },
         checklistItem: {
           include: {
-            criteria: { select: { id: true, description: true } },
+            criteria:     { select: { id: true, description: true } },
             municipality: { select: { name: true } },
           },
         },
@@ -128,19 +129,19 @@ export async function PUT(
     });
 
     await logAction({
-      userId: session.user.id,
-      action: "EVIDENCE_RETURNED",
-      entityType: "Evidence",
-      entityId: evidence.id,
+      userId:      session.user.id,
+      action:      "EVIDENCE_RETURNED",
+      entityType:  "Evidence",
+      entityId:    evidence.id,
       description: `Devolveu a evidência "${evidence.fileName}"`,
     });
 
     try {
       await sendEvidenceReturnedEmail({
-        to: { email: evidence.uploader.email, name: evidence.uploader.name },
-        criterionId: evidence.checklistItem.criteria.id,
-        criterionDesc: evidence.checklistItem.criteria.description,
-        returnReason: body.reason ?? "Motivo não informado",
+        to:              { email: evidence.uploader.email, name: evidence.uploader.name },
+        criterionId:     evidence.checklistItem.criteria.id,
+        criterionDesc:   evidence.checklistItem.criteria.description,
+        returnReason:    body.reason ?? "Motivo não informado",
         municipalityName: evidence.checklistItem.municipality.name,
       });
     } catch (err) {
@@ -150,9 +151,9 @@ export async function PUT(
     return NextResponse.json({ success: true, data: evidence });
   }
 
-  // ── CHECKLIST DE QUALIDADE (admin preenche campos técnicos) ────────────────
+  // ── CHECKLIST DE QUALIDADE ─────────────────────────────────────────────────
   if (body.action === "validate") {
-    if (session.user.role !== "admin") {
+    if (!canReview(session.user.role)) {
       return NextResponse.json({ success: false, error: "Acesso negado" }, { status: 403 });
     }
 
@@ -165,22 +166,22 @@ export async function PUT(
     const updated = await db.evidence.update({
       where: { id },
       data: {
-        ...(hasDate !== undefined && { hasDate }),
-        ...(dateIsInPeriod !== undefined && { dateIsInPeriod }),
-        ...(hasGeotag !== undefined && { hasGeotag }),
-        ...(isPdfSearchable !== undefined && { isPdfSearchable }),
+        ...(hasDate               !== undefined && { hasDate               }),
+        ...(dateIsInPeriod        !== undefined && { dateIsInPeriod        }),
+        ...(hasGeotag             !== undefined && { hasGeotag             }),
+        ...(isPdfSearchable       !== undefined && { isPdfSearchable       }),
         ...(hasElectronicSignature !== undefined && { hasElectronicSignature }),
-        ...(followsAnnexII !== undefined && { followsAnnexII }),
-        ...(isOriginalDoc !== undefined && { isOriginalDoc }),
+        ...(followsAnnexII        !== undefined && { followsAnnexII        }),
+        ...(isOriginalDoc         !== undefined && { isOriginalDoc         }),
       },
       select: { id: true, fileName: true },
     });
 
     await logAction({
-      userId: session.user.id,
-      action: "EVIDENCE_APPROVED",
-      entityType: "Evidence",
-      entityId: updated.id,
+      userId:      session.user.id,
+      action:      "EVIDENCE_APPROVED",
+      entityType:  "Evidence",
+      entityId:    updated.id,
       description: `Atualizou checklist da evidência "${updated.fileName}"`,
     });
 
@@ -191,6 +192,7 @@ export async function PUT(
 }
 
 // ─── DELETE /api/evidences/[id] ────────────────────────────────────────────
+// Só admin pode excluir
 
 export async function DELETE(
   _req: NextRequest,
@@ -202,7 +204,6 @@ export async function DELETE(
   }
 
   const { id } = await params;
-
   const evidence = await db.evidence.findUnique({ where: { id } });
 
   if (!evidence) {
@@ -213,8 +214,7 @@ export async function DELETE(
   const isUploader = evidence.uploadedBy === session.user.id;
   const isPending  = evidence.validationStatus === "pending";
 
-  // Funcionário só pode excluir arquivos pendentes que ele mesmo enviou
-  // Admin pode excluir qualquer arquivo
+  // Funcionário/reviewer só pode excluir seus próprios arquivos pendentes
   if (!isAdmin && (!isUploader || !isPending)) {
     return NextResponse.json(
       { success: false, error: "Sem permissão. Arquivos aprovados só podem ser removidos pelo administrador." },
@@ -229,10 +229,10 @@ export async function DELETE(
   }
 
   await logAction({
-    userId: session.user.id,
-    action: "EVIDENCE_DELETED",
-    entityType: "Evidence",
-    entityId: evidence.id,
+    userId:      session.user.id,
+    action:      "EVIDENCE_DELETED",
+    entityType:  "Evidence",
+    entityId:    evidence.id,
     description: `Removeu a evidência "${evidence.fileName}"`,
   });
 

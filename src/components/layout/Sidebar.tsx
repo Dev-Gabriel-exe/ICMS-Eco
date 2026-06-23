@@ -14,6 +14,7 @@ interface SidebarProps {
   role: Role;
   userName: string;
   userEmail: string;
+  userAvatarUrl?: string | null;
   municipalityId?: string;
   municipalityName?: string;
 }
@@ -55,11 +56,13 @@ const C = {
 };
 
 export function Sidebar({
-  role, userName, userEmail, municipalityId, municipalityName,
+  role, userName, userEmail, userAvatarUrl, municipalityId, municipalityName,
 }: SidebarProps) {
   const pathname = usePathname();
   const isActive = (href: string, exact = false) =>
     exact ? pathname === href : pathname.startsWith(href);
+
+  const isPerfilActive = pathname === "/perfil";
 
   return (
     <aside
@@ -161,20 +164,41 @@ export function Sidebar({
       {/* Perfil + logout */}
       <div className="p-3 shrink-0" style={{ borderTop: `1px solid ${C.border}` }}>
         <div className="flex items-center gap-3 px-2 py-2 rounded-xl">
-          <div
-            className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 text-white text-xs font-bold"
-            style={{ background: "linear-gradient(135deg, #065f46 0%, #059669 100%)" }}
+
+          {/* Avatar clicável → /perfil */}
+          <Link
+            href="/perfil"
+            title="Meu perfil"
+            className={cn(
+              "w-8 h-8 rounded-xl shrink-0 overflow-hidden transition-opacity hover:opacity-80",
+              isPerfilActive && "ring-2 ring-green-400 ring-offset-1 ring-offset-[#1a2e23]"
+            )}
           >
-            {initials(userName)}
-          </div>
+            {userAvatarUrl ? (
+              <img
+                src={userAvatarUrl}
+                alt={userName}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div
+                className="w-full h-full flex items-center justify-center text-white text-xs font-bold"
+                style={{ background: "linear-gradient(135deg, #065f46 0%, #059669 100%)" }}
+              >
+                {initials(userName)}
+              </div>
+            )}
+          </Link>
+
           <div className="flex-1 min-w-0">
-            <div className="text-xs font-semibold truncate" style={{ color: C.textActive }}>
-              {userName}
-            </div>
+            <Link href="/perfil" className="hover:underline underline-offset-2" style={{ color: C.textActive }}>
+              <div className="text-xs font-semibold truncate">{userName}</div>
+            </Link>
             <div className="text-xs truncate" style={{ color: C.textMuted }}>
               {userEmail}
             </div>
           </div>
+
           <button
             onClick={() => signOut({ callbackUrl: "/login" })}
             title="Sair"
@@ -231,19 +255,14 @@ function NavLink({
       onMouseEnter={(e) => { if (!active) e.currentTarget.style.background = C.hoverBg; }}
       onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = "transparent"; }}
     >
-      {/* Bolinha */}
       <span
         className="w-1.5 h-1.5 rounded-full shrink-0"
         style={{ background: active ? C.dot : C.dotIdle }}
       />
-
-      {/* Ícone */}
       <span style={{ color: active ? C.iconActive : C.iconIdle }} className="shrink-0">
         {icon}
       </span>
-
       <span className="truncate flex-1">{label}</span>
-
       {active && (
         <ChevronRight className="w-3 h-3 shrink-0" style={{ color: C.iconActive }} />
       )}

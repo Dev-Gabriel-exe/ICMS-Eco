@@ -22,7 +22,7 @@ const subDocs: SubDocInput[] = [
     code: "lo_aterro",
     label: "Licença de Operação (LO) do Aterro Sanitário",
     description: "Cópia da LO do aterro sanitário receptor, vigente durante todo o período de apuração.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 1,
   },
   {
@@ -30,7 +30,7 @@ const subDocs: SubDocInput[] = [
     code: "contrato_aterro",
     label: "Contrato ou instrumento de parceria com o aterro/transportadora",
     description: "Cópia do contrato ou instrumento de parceria vigente com o aterro sanitário ou empresa responsável pelo transporte e destinação final.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 2,
   },
   {
@@ -46,7 +46,7 @@ const subDocs: SubDocInput[] = [
     code: "sinir_cadastro",
     label: "Comprovante de cadastro no SINIR",
     description: "Documento que comprove o cadastro do município no Sistema Nacional de Informações sobre a Gestão dos Resíduos Sólidos (SINIR).",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 4,
   },
 
@@ -56,7 +56,7 @@ const subDocs: SubDocInput[] = [
     code: "plano_coleta_seletiva",
     label: "Instrumento de planejamento (projeto técnico ou programa)",
     description: "Projeto técnico ou programa de coleta seletiva.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 1,
   },
   {
@@ -64,7 +64,7 @@ const subDocs: SubDocInput[] = [
     code: "relatorio_coleta_seletiva",
     label: "Relatório Operacional com registro fotográfico datado",
     description: "Relatório descrevendo as ações executadas, com fotos datadas.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 2,
   },
   {
@@ -82,7 +82,7 @@ const subDocs: SubDocInput[] = [
     code: "relatorio_limpeza_publica",
     label: "Relatório Operacional de limpeza pública",
     description: "Relatório do período de apuração discriminando a execução de cada serviço (coleta, varrição, capina, poda), com registro fotográfico datado e georreferenciado.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 1,
   },
 
@@ -92,7 +92,7 @@ const subDocs: SubDocInput[] = [
     code: "licenca_empresa_rss",
     label: "Licença Ambiental de Operação da empresa de coleta de RSS",
     description: "LAO ou documento equivalente válido da empresa contratada para coleta e transporte dos resíduos de serviço de saúde.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 1,
   },
   {
@@ -110,7 +110,7 @@ const subDocs: SubDocInput[] = [
     code: "pmgirs",
     label: "Plano Municipal de Gestão Integrada de Resíduos Sólidos",
     description: "Plano completo (ou simplificado para municípios < 20.000 hab.) ou plano de saneamento básico, com publicação.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 1,
   },
 
@@ -120,7 +120,7 @@ const subDocs: SubDocInput[] = [
     code: "relatorio_pev",
     label: "Relatório Operacional dos Pontos de Entrega Voluntária (PEVs)",
     description: "Descrição dos pontos de entrega, endereço, quantitativo recebido e registros fotográficos de cada PEV.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 1,
   },
   {
@@ -138,7 +138,7 @@ const subDocs: SubDocInput[] = [
     code: "contrato_cooperativa",
     label: "Contrato/convênio com cooperativa de catadores",
     description: "Instrumento de parceria com entidade de direito privado que reúna trabalhadores de coleta e seleção de materiais recicláveis.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 1,
   },
   {
@@ -146,7 +146,7 @@ const subDocs: SubDocInput[] = [
     code: "projeto_cooperativa",
     label: "Projeto ou documento de planejamento das ações",
     description: "Documento descrevendo as ações planejadas no período do vínculo de parceria.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 2,
   },
   {
@@ -154,7 +154,7 @@ const subDocs: SubDocInput[] = [
     code: "relatorio_cooperativa",
     label: "Relatório Operacional das ações desenvolvidas",
     description: "Relatório descrevendo as ações de capacitação e treinamento dos associados no período de apuração.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 3,
   },
 
@@ -242,7 +242,7 @@ const subDocs: SubDocInput[] = [
     code: "projeto_pedagogico_guardioes",
     label: "Projeto Pedagógico Simplificado",
     description: "Documento descrevendo objetivos, público-alvo, cronograma (mínimo um semestre) e atividades, com foco claro na opção escolhida (Guardiões ou Brigadistas).",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 1,
   },
   {
@@ -250,7 +250,7 @@ const subDocs: SubDocInput[] = [
     code: "lista_alunos_guardioes",
     label: "Relação dos alunos participantes",
     description: "Lista com nome completo, escola e turma dos alunos participantes.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 2,
   },
   {
@@ -266,7 +266,7 @@ const subDocs: SubDocInput[] = [
     code: "declaracao_capacitacao_brigadistas",
     label: "Declaração de Capacitação (somente Brigadistas Mirins)",
     description: "Documento assinado pelo instrutor responsável (servidor habilitado, bombeiro civil ou brigadista certificado) atestando o treinamento de prevenção. Exigido apenas para a opção Brigadistas.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 4,
   },
 
@@ -276,7 +276,7 @@ const subDocs: SubDocInput[] = [
     code: "divulgacao_congresso",
     label: "Material de Divulgação do Congresso",
     description: "Cópia do cartaz, folder ou publicação em rede social convidando a população.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 1,
   },
   {
@@ -284,7 +284,7 @@ const subDocs: SubDocInput[] = [
     code: "programacao_congresso",
     label: "Programação Oficial do Congresso",
     description: "Documento com data, local, temas das palestras/debates e nomes dos palestrantes/mediadores.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 2,
   },
   {
@@ -292,7 +292,7 @@ const subDocs: SubDocInput[] = [
     code: "lista_presenca_congresso",
     label: "Lista de Presença",
     description: "Comprovante de participação do público, devidamente assinado.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 3,
   },
   {
@@ -300,7 +300,7 @@ const subDocs: SubDocInput[] = [
     code: "ata_congresso",
     label: "Ata ou Relatório Final do Congresso",
     description: "Documento-síntese com principais pontos discutidos, propostas e encaminhamentos.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 4,
   },
   {
@@ -318,7 +318,7 @@ const subDocs: SubDocInput[] = [
     code: "plano_acao_caca",
     label: "Plano de Ação Simplificado",
     description: "Documento descrevendo objetivo, público-alvo, espécies a proteger e ações planejadas.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 1,
   },
   {
@@ -344,7 +344,7 @@ const subDocs: SubDocInput[] = [
     code: "identificacao_pagina",
     label: "Identificação da Página em Rede Social",
     description: "PDF com o link de acesso público e captura de tela da página principal (nome e descrição visíveis).",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 1,
   },
   {
@@ -352,16 +352,16 @@ const subDocs: SubDocInput[] = [
     code: "relatorio_publicacoes",
     label: "Relatório de Atividade Continuada (mín. 4 posts/mês por 12 meses)",
     description: "PDF com capturas de tela comprovando mínimo de 4 publicações mensais durante pelo menos 12 meses do período de apuração.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 2,
   },
 
   // ── C.1 ──────────────────────────────────────────────────────────────────
   {
     criteriaId: "C.1",
-    code: "requerimento_relatorio_semarh",
-    label: "Requerimento de análise e Relatório Técnico da SEMARH",
-    description: "Documento de postulação do item junto à SEMARH, solicitando a emissão do Relatório Técnico do Índice de Redução de Desmatamento Ilegal.",
+    code: "relatorio_semarh",
+    label: "Relatório Técnico SEMARH",
+    description: "Arquivo do Relatório Técnico referente ao Índice de Redução de Desmatamento Ilegal, emitido pela SEMARH conforme metodologia do Termo de Referência vigente.",
     acceptsMultiple: false,
     order: 1,
   },
@@ -380,7 +380,7 @@ const subDocs: SubDocInput[] = [
     code: "mapa_areas_degradadas",
     label: "Mapa georreferenciado das áreas degradadas",
     description: "Mapa indicando as áreas degradadas identificadas.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 2,
   },
   {
@@ -388,7 +388,7 @@ const subDocs: SubDocInput[] = [
     code: "quadro_resumo_degradadas",
     label: "Quadro resumo de áreas degradadas",
     description: "Tabela com identificação (local), coordenadas, extensão (ha), tipo e fator gerador da degradação, assinada por responsável técnico habilitado.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 3,
   },
 
@@ -424,7 +424,7 @@ const subDocs: SubDocInput[] = [
     code: "lei_viveiro",
     label: "Lei ou Decreto de criação do Viveiro Municipal",
     description: "Instrumento legal de criação do viveiro municipal.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 1,
   },
   {
@@ -448,7 +448,7 @@ const subDocs: SubDocInput[] = [
     code: "inventario_mudas",
     label: "Inventário de mudas assinado por responsável técnico",
     description: "Tabela/planilha com quantidade e espécies produzidas no período de apuração, data da contagem e assinatura de responsável técnico (com registro profissional).",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 4,
   },
   {
@@ -456,7 +456,7 @@ const subDocs: SubDocInput[] = [
     code: "relatorio_plantio_viveiro",
     label: "Relatório de plantio das mudas",
     description: "Descrição de quantidade, espécies, locais e datas de plantio, com registro fotográfico georreferenciado e datado ou notas fiscais de doação.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 5,
   },
 
@@ -466,7 +466,7 @@ const subDocs: SubDocInput[] = [
     code: "projeto_plantio_mudas",
     label: "Projeto Técnico de plantio (com ART)",
     description: "Projeto assinado por responsável habilitado com localização georreferenciada, diagnóstico, metodologia (espaçamento, espécies nativas, cronograma) e plano de arborização.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 1,
   },
   {
@@ -474,7 +474,7 @@ const subDocs: SubDocInput[] = [
     code: "relatorio_plantio_mudas",
     label: "Relatório Operacional de plantio",
     description: "Data e local, quantitativo por espécie, fotos georreferenciadas antes e depois, notas fiscais de mudas e insumos.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 2,
   },
   {
@@ -482,7 +482,7 @@ const subDocs: SubDocInput[] = [
     code: "mapa_plantio_mudas",
     label: "Mapa georreferenciado com pontos de plantio",
     description: "Mapa com a distribuição dos pontos de plantio das mudas.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 3,
   },
 
@@ -492,7 +492,7 @@ const subDocs: SubDocInput[] = [
     code: "lei_brigada",
     label: "Instrumento legal de criação da Brigada",
     description: "Lei, decreto ou portaria de criação da brigada, publicado em diário oficial.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 1,
   },
   {
@@ -500,7 +500,7 @@ const subDocs: SubDocInput[] = [
     code: "relatorio_brigada",
     label: "Relatório Operacional da Brigada",
     description: "Endereço e descrição da sede com fotos georreferenciadas e datadas, instrumento de nomeação dos componentes, comprovação de vínculo do Chefe, treinamento comprovado (SEMARH/CBMPI/IBAMA/ICMBio, até 3 anos anteriores), relação de EPIs e materiais com NF, relatório de atividades (mín. 4) e ROIF nos casos de combate.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 2,
   },
 
@@ -510,7 +510,7 @@ const subDocs: SubDocInput[] = [
     code: "lei_pmmc",
     label: "Instrumento legal de aprovação do PMMC",
     description: "Lei, decreto ou portaria de aprovação e publicação do Plano Municipal de Mudanças Climáticas no Diário Oficial.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 1,
   },
   {
@@ -518,7 +518,7 @@ const subDocs: SubDocInput[] = [
     code: "pmmc_completo",
     label: "Cópia integral do PMMC",
     description: "Plano completo contemplando estratégias e metas de mitigação/adaptação, definição de responsabilidades e cronograma de execução.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 2,
   },
 
@@ -528,7 +528,7 @@ const subDocs: SubDocInput[] = [
     code: "lei_ppcif",
     label: "Instrumento legal de aprovação do PPCIF",
     description: "Lei, decreto ou portaria de aprovação e publicação do Plano de Prevenção e Combate a Incêndios Florestais no Diário Oficial.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 1,
   },
   {
@@ -536,7 +536,7 @@ const subDocs: SubDocInput[] = [
     code: "ppcif_completo",
     label: "Plano PPCIF completo (com todos os eixos exigidos)",
     description: "Plano com diagnóstico e mapa de risco, estrutura de governança, protocolos operacionais, inventário de recursos, plano de prevenção, de capacitação, de resposta e cronograma anual. Assinado pela autoridade responsável e coordenador.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 2,
   },
 
@@ -546,7 +546,7 @@ const subDocs: SubDocInput[] = [
     code: "carta_compromisso_ods",
     label: "Carta-Compromisso 'Meu Município pelos ODS 2025-2030'",
     description: "Carta devidamente preenchida e assinada.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 1,
   },
   {
@@ -554,7 +554,7 @@ const subDocs: SubDocInput[] = [
     code: "lei_comissao_ods",
     label: "Lei ou Decreto de criação da Comissão Municipal para os ODS",
     description: "Instrumento publicado em Diário Oficial.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 2,
   },
   {
@@ -562,7 +562,7 @@ const subDocs: SubDocInput[] = [
     code: "portaria_membros_ods",
     label: "Portaria de Nomeação dos Membros da Comissão ODS",
     description: "Publicada em Diário Oficial, com indicação de paridade.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 3,
   },
   {
@@ -570,7 +570,7 @@ const subDocs: SubDocInput[] = [
     code: "regimento_ods",
     label: "Regimento Interno da Comissão ODS",
     description: "Publicado em Diário Oficial.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 4,
   },
   {
@@ -578,7 +578,7 @@ const subDocs: SubDocInput[] = [
     code: "plano_acao_ods",
     label: "Plano de Ação e Diagnóstico Situacional ODS",
     description: "Plano de ação e metas para implementação da iniciativa 'Meu Município pelos ODS' e respectivo diagnóstico situacional.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 5,
   },
 
@@ -598,7 +598,7 @@ const subDocs: SubDocInput[] = [
     code: "inventario_faunistico",
     label: "Inventário Faunístico (com ART) — amostragem sazonal",
     description: "Inventário com amostragem sazonal (seca e/ou chuva), avaliando grau de ameaça, conforme Termos de Referência da SEMARH.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 1,
   },
   {
@@ -606,7 +606,7 @@ const subDocs: SubDocInput[] = [
     code: "relatorio_monitoramento_fauna",
     label: "Relatório de Monitoramento, Atualização e Defesa das Espécies (com ART)",
     description: "Relatório atualizado anualmente conforme Termos de Referência da SEMARH. Exigido a partir do 2º ano.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 2,
   },
 
@@ -616,7 +616,7 @@ const subDocs: SubDocInput[] = [
     code: "relatorio_abrigo_animais",
     label: "Relatório de abrigo para animais resgatados",
     description: "Descrição da estrutura física, quantitativo de animais atendidos, recursos empregados e instrumento de parceria/convênio (se apoio a terceiros).",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 1,
   },
   {
@@ -624,7 +624,7 @@ const subDocs: SubDocInput[] = [
     code: "relatorio_castracao",
     label: "Relatório de controle populacional (castração)",
     description: "Quantitativo de animais em procedimentos de castração promovidos pelo município, com responsabilidade técnica, métodos e registro fotográfico datado.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 2,
   },
   {
@@ -632,7 +632,7 @@ const subDocs: SubDocInput[] = [
     code: "relatorio_veterinario",
     label: "Relatório de atendimento médico veterinário gratuito",
     description: "Quantitativo de animais atendidos em procedimentos promovidos pelo município, com responsabilidade técnica, métodos e registro fotográfico datado.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 3,
   },
 
@@ -642,7 +642,7 @@ const subDocs: SubDocInput[] = [
     code: "lei_cmdc",
     label: "Lei ou Decreto de criação e regulamentação da CMDC",
     description: "Instrumento legal criando e regulamentando a Coordenação Municipal de Defesa Civil.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 1,
   },
   {
@@ -650,7 +650,7 @@ const subDocs: SubDocInput[] = [
     code: "plano_defesa_civil",
     label: "Plano Municipal de Ação da Defesa Civil",
     description: "Plano devidamente publicado.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 2,
   },
   {
@@ -658,7 +658,7 @@ const subDocs: SubDocInput[] = [
     code: "nomeacao_coordenador_cmdc",
     label: "Ato de nomeação do Coordenador Municipal",
     description: "Instrumento legal de nomeação do coordenador da CMDC.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 3,
   },
   {
@@ -666,7 +666,7 @@ const subDocs: SubDocInput[] = [
     code: "nomeacao_tecnicos_cmdc",
     label: "Ato de nomeação dos Técnicos Operacionais",
     description: "Instrumento legal de nomeação dos técnicos operacionais da CMDC.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 4,
   },
   {
@@ -674,7 +674,7 @@ const subDocs: SubDocInput[] = [
     code: "relatorio_cmdc",
     label: "Relatório Operacional de atividades da CMDC",
     description: "Relatório de atividades de prevenção e mitigação de desastres de origem ambiental no período de apuração.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 5,
   },
 
@@ -684,7 +684,7 @@ const subDocs: SubDocInput[] = [
     code: "declaracao_concessionaria",
     label: "Declaração da concessionária/empresa de saneamento",
     description: "Declaração emitida pela concessionária ou empresa de serviços de saneamento informando a cobertura de esgotamento sanitário.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 1,
   },
   {
@@ -692,7 +692,7 @@ const subDocs: SubDocInput[] = [
     code: "licenca_operacao_esgoto",
     label: "Licença Ambiental de Operação do sistema de esgoto",
     description: "LAO emitida pelo órgão competente, em validade.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 2,
   },
 
@@ -768,7 +768,7 @@ const subDocs: SubDocInput[] = [
     code: "inventario_hidro",
     label: "Inventário Hidrogeológico Municipal",
     description: "Mapa georreferenciado e planilha técnica com localização de todos os pontos de captação de domínio municipal, com dados de vazão, profundidade e status de operação.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 1,
   },
 
@@ -778,7 +778,7 @@ const subDocs: SubDocInput[] = [
     code: "relatorio_campanha_sonora",
     label: "Relatório Operacional da campanha de poluição sonora",
     description: "Descrição das atividades, locais de realização, registro fotográfico datado e mín. 4 dias de campanha distribuídos em 2 semestres (2 ações em cada semestre), dissociada de outras campanhas.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 1,
   },
 
@@ -788,7 +788,7 @@ const subDocs: SubDocInput[] = [
     code: "relatorio_campanha_atm",
     label: "Relatório Operacional da campanha de poluição atmosférica",
     description: "Descrição das atividades, locais de realização, registro fotográfico datado e mín. 4 dias distribuídos em 2 semestres, dissociada de outras campanhas.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 1,
   },
 
@@ -798,7 +798,7 @@ const subDocs: SubDocInput[] = [
     code: "relatorio_campanha_visual",
     label: "Relatório Operacional da campanha de poluição visual",
     description: "Descrição das atividades, locais de realização, registro fotográfico datado e mín. 4 dias distribuídos em 2 semestres, dissociada de outras campanhas.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 1,
   },
 
@@ -808,7 +808,7 @@ const subDocs: SubDocInput[] = [
     code: "relatorio_estrutura_fiscalizacao",
     label: "Relatório Operacional de estruturação da fiscalização",
     description: "Quadro de funcionários de fiscalização (conforme Lei 9.605/98 art. 70 §1º) com comprovação de vínculo, comprovante de designação da autoridade julgadora e planejamento de atividades preventivas.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 1,
   },
 
@@ -818,7 +818,7 @@ const subDocs: SubDocInput[] = [
     code: "relatorio_fiscalizacao_sonora",
     label: "Relatório Operacional de fiscalização de poluição sonora",
     description: "Descrição das atividades em mín. 6 dias distintos distribuídos em mín. 3 quadrimestres, com fotos datadas e georreferenciadas, metodologia de manuseio dos instrumentos de medição (certificados pelo Inmetro) e descrição de processos de apuração de irregularidades.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 1,
   },
 
@@ -828,7 +828,7 @@ const subDocs: SubDocInput[] = [
     code: "relatorio_fiscalizacao_visual",
     label: "Relatório Operacional de fiscalização de poluição visual",
     description: "Descrição das atividades em mín. 6 dias distintos distribuídos em mín. 3 quadrimestres, com fotos e descrição de processos de apuração de irregularidades.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 1,
   },
 
@@ -838,7 +838,7 @@ const subDocs: SubDocInput[] = [
     code: "relatorio_fiscalizacao_atm",
     label: "Relatório Operacional de fiscalização de poluição atmosférica",
     description: "Descrição das atividades em mín. 6 dias distintos distribuídos em mín. 3 quadrimestres, com fotos e descrição de processos de apuração de irregularidades.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 1,
   },
 
@@ -848,7 +848,7 @@ const subDocs: SubDocInput[] = [
     code: "cnd_ambiental",
     label: "Certidão Negativa de Débitos Ambientais (SEMARH)",
     description: "CND emitida pela SEMARH, válida dentro do período de apuração do certame.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 1,
   },
 
@@ -858,7 +858,7 @@ const subDocs: SubDocInput[] = [
     code: "lei_uso_solo",
     label: "Lei de uso e ocupação do solo",
     description: "Instrumento legal de instituição da política municipal de uso e ocupação do solo, conforme art. 2º, VI, da Lei Federal 10.257/2001.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 1,
   },
   {
@@ -866,7 +866,7 @@ const subDocs: SubDocInput[] = [
     code: "lei_orgao_controle_solo",
     label: "Lei de instituição do órgão de controle de uso do solo",
     description: "Instrumento legal criando o órgão responsável pelo controle do uso e ocupação do solo.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 2,
   },
   {
@@ -874,7 +874,7 @@ const subDocs: SubDocInput[] = [
     code: "nomeacao_quadro_solo",
     label: "Instrumento de nomeação do quadro funcional",
     description: "Instrumento legal de nomeação do quadro funcional para exercício das atribuições de controle de uso e ocupação do solo.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 3,
   },
   {
@@ -892,7 +892,7 @@ const subDocs: SubDocInput[] = [
     code: "relatorio_licencas_urbanisticas",
     label: "Relatório Operacional de licenças urbanísticas",
     description: "Detalhamento das licenças urbanísticas emitidas no período de apuração: número da licença, interessado e data de validade.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 1,
   },
 
@@ -902,7 +902,7 @@ const subDocs: SubDocInput[] = [
     code: "relatorio_fiscalizacao_solo",
     label: "Relatório Operacional de fiscalização de uso do solo",
     description: "Descrição das atividades em mín. 6 dias distintos distribuídos em mín. 3 quadrimestres, com fotos datadas e georreferenciadas e descrição de processos de apuração de irregularidades.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 1,
   },
 
@@ -912,7 +912,7 @@ const subDocs: SubDocInput[] = [
     code: "plano_requalificacao",
     label: "Plano de requalificação urbana",
     description: "Cópia do plano de requalificação urbana.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 1,
   },
   {
@@ -920,7 +920,7 @@ const subDocs: SubDocInput[] = [
     code: "relatorio_requalificacao",
     label: "Relatório Operacional de execução",
     description: "Relatório comprovando a execução do plano de requalificação no período de apuração.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 2,
   },
   {
@@ -928,7 +928,7 @@ const subDocs: SubDocInput[] = [
     code: "art_requalificacao",
     label: "Comprovação de responsabilidade técnica (ART)",
     description: "ART ou documento equivalente do responsável técnico pelo plano de requalificação.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 3,
   },
 
@@ -938,7 +938,7 @@ const subDocs: SubDocInput[] = [
     code: "diagnostico_assentamentos",
     label: "Diagnóstico de assentamentos precários e edificações irregulares",
     description: "Diagnóstico do território municipal no período de apuração, considerando: renda domiciliar, situação fundiária, domínio da área, população, infraestrutura urbana, padrão viário, padrão de lotes, áreas de risco, densidade, material de construção, localização com restrições e zoneamento municipal.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 1,
   },
 
@@ -948,7 +948,7 @@ const subDocs: SubDocInput[] = [
     code: "ato_criacao_uc_federal_estadual",
     label: "Ato normativo de criação da UC federal/estadual",
     description: "Legislação federal e/ou estadual de criação da Unidade de Conservação.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 1,
   },
   {
@@ -956,7 +956,7 @@ const subDocs: SubDocInput[] = [
     code: "relatorio_incidencia_uc_fed_est",
     label: "Relatório de comprovação de incidência territorial",
     description: "Relatório demonstrando a incidência da UC federal/estadual no território municipal, com percentual do território abrangido.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 2,
   },
 
@@ -976,7 +976,7 @@ const subDocs: SubDocInput[] = [
     code: "ato_criacao_uc_municipal",
     label: "Ato normativo de criação da UC municipal",
     description: "Instrumento legal observando os parâmetros da legislação federal e estadual.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 1,
   },
   {
@@ -984,7 +984,7 @@ const subDocs: SubDocInput[] = [
     code: "relatorio_incidencia_uc_mun",
     label: "Relatório de comprovação de incidência territorial",
     description: "Relatório demonstrando a incidência da UC municipal no território, com percentual abrangido.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 2,
   },
 
@@ -994,7 +994,7 @@ const subDocs: SubDocInput[] = [
     code: "relatorio_sede_uc",
     label: "Relatório Operacional da sede administrativa da UC",
     description: "Descrição dos equipamentos e instalações da UC municipal com registro fotográfico datado.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 1,
   },
 
@@ -1004,7 +1004,7 @@ const subDocs: SubDocInput[] = [
     code: "plano_manejo_uc",
     label: "Plano de Manejo da UC municipal (aprovado pela SEMARH)",
     description: "Cópia do plano de manejo aprovado pela SEMARH.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 1,
   },
   {
@@ -1012,7 +1012,7 @@ const subDocs: SubDocInput[] = [
     code: "ato_aprovacao_manejo",
     label: "Ato de aprovação do Plano de Manejo",
     description: "Publicação do ato de aprovação do plano de manejo.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 2,
   },
   {
@@ -1020,7 +1020,7 @@ const subDocs: SubDocInput[] = [
     code: "relatorio_execucao_manejo",
     label: "Relatório Operacional de execução do Plano de Manejo",
     description: "Relatório de execução com registro fotográfico datado.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 3,
   },
 
@@ -1030,7 +1030,7 @@ const subDocs: SubDocInput[] = [
     code: "lei_conselho_uc",
     label: "Ato legal de criação do Conselho Gestor da UC",
     description: "Criado conforme §6º, art. 17 do Decreto Federal 4.340/2002.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 1,
   },
   {
@@ -1038,7 +1038,7 @@ const subDocs: SubDocInput[] = [
     code: "nomeacao_conselho_uc",
     label: "Instrumento de nomeação dos membros do Conselho Gestor",
     description: "Instrumento legal de nomeação dos membros do conselho gestor da UC.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 2,
   },
   {
@@ -1066,7 +1066,7 @@ const subDocs: SubDocInput[] = [
     code: "lei_mudancas_climaticas",
     label: "Legislação municipal de combate às mudanças climáticas",
     description: "Legislação devidamente publicada descrevendo ações ambientais com objetivos a serem perseguidos.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 1,
   },
 
@@ -1076,7 +1076,7 @@ const subDocs: SubDocInput[] = [
     code: "lei_taxa_residuos",
     label: "Legislação municipal de cobrança por coleta de resíduos",
     description: "Legislação conforme art. 29, inciso II, da Lei Federal 11.445/2007.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 1,
   },
   {
@@ -1084,7 +1084,7 @@ const subDocs: SubDocInput[] = [
     code: "comprov_receitas_taxa",
     label: "Comprovante de receitas da Taxa de Coleta",
     description: "Documento oficial comprovando as receitas decorrentes da cobrança da taxa no período de apuração.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 2,
   },
 
@@ -1094,7 +1094,7 @@ const subDocs: SubDocInput[] = [
     code: "lei_politica_ma",
     label: "Política Municipal de Meio Ambiente",
     description: "Legislação municipal publicada descrevendo ações ambientais com objetivos a serem perseguidos.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 1,
   },
 
@@ -1104,7 +1104,7 @@ const subDocs: SubDocInput[] = [
     code: "lei_politica_ea",
     label: "Política Municipal de Educação Ambiental",
     description: "Legislação municipal sobre o tema, devidamente publicada.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 1,
   },
 
@@ -1114,7 +1114,7 @@ const subDocs: SubDocInput[] = [
     code: "lei_orgao_ma",
     label: "Lei de Criação do Órgão Municipal de Meio Ambiente",
     description: "Cópia da lei de criação do órgão executivo municipal.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 1,
   },
   {
@@ -1122,7 +1122,7 @@ const subDocs: SubDocInput[] = [
     code: "nomeacao_secretario_tecnicos",
     label: "Ato de nomeação do Secretário e Técnicos do Órgão Ambiental",
     description: "Ato ou decreto de nomeação com formação compatível.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 2,
   },
   {
@@ -1130,7 +1130,7 @@ const subDocs: SubDocInput[] = [
     code: "declaracao_municipalizacao",
     label: "Declaração da SEMARH de municipalização do licenciamento",
     description: "Declaração emitida pela SEMARH comprovando a municipalização do licenciamento ambiental.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 3,
   },
   {
@@ -1138,7 +1138,7 @@ const subDocs: SubDocInput[] = [
     code: "relatorio_licencas_ambientais",
     label: "Relatório Operacional de licenças ambientais expedidas",
     description: "Todas as licenças expedidas no ano de apuração.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 4,
   },
 
@@ -1148,7 +1148,7 @@ const subDocs: SubDocInput[] = [
     code: "lei_fundo_ma",
     label: "Lei de Criação do Fundo Municipal de Meio Ambiente",
     description: "Cópia da lei de criação do fundo.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 1,
   },
   {
@@ -1156,7 +1156,7 @@ const subDocs: SubDocInput[] = [
     code: "decreto_fundo_ma",
     label: "Decreto de regulamentação do Fundo",
     description: "Cópia do decreto de regulamentação do Fundo Municipal de Meio Ambiente.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 2,
   },
   {
@@ -1172,7 +1172,7 @@ const subDocs: SubDocInput[] = [
     code: "posse_conselheiros_fundo",
     label: "Termo de posse dos conselheiros do Fundo",
     description: "Cópia do termo de posse dos conselheiros do Conselho Gestor do Fundo.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 4,
   },
 
@@ -1182,7 +1182,7 @@ const subDocs: SubDocInput[] = [
     code: "lei_poluicao_sonora",
     label: "Legislação de controle da poluição sonora",
     description: "Cópia do instrumento legal devidamente publicado.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 1,
   },
 
@@ -1192,7 +1192,7 @@ const subDocs: SubDocInput[] = [
     code: "lei_poluicao_visual",
     label: "Legislação de controle da poluição visual",
     description: "Cópia do instrumento legal devidamente publicado.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 1,
   },
 
@@ -1202,7 +1202,7 @@ const subDocs: SubDocInput[] = [
     code: "lei_poluicao_atm",
     label: "Legislação de controle da poluição atmosférica",
     description: "Cópia do instrumento legal devidamente publicado.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 1,
   },
 
@@ -1222,7 +1222,7 @@ const subDocs: SubDocInput[] = [
     code: "lei_bem_estar_animal",
     label: "Legislação de promoção do bem-estar animal",
     description: "Cópia do instrumento legal devidamente publicado.",
-    acceptsMultiple: false,
+    acceptsMultiple: true,
     order: 1,
   },
 ];

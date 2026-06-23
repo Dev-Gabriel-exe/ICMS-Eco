@@ -15,6 +15,7 @@ datasource db {
 enum Role {
   admin
   employee
+  reviewer
 }
 
 enum ChecklistStatus {
@@ -68,6 +69,9 @@ enum AuditAction {
 
   USER_CREATED
   USER_UPDATED
+
+  USER_LOGIN
+  USER_LOGOUT
 
   EVIDENCE_UPLOADED
   EVIDENCE_APPROVED
@@ -137,6 +141,7 @@ model User {
   role               Role     @default(employee)
   mustChangePassword Boolean  @default(true) @map("must_change_password")
   isActive           Boolean  @default(true) @map("is_active")
+  avatarUrl          String?  @map("avatar_url")
   createdAt          DateTime @default(now()) @map("created_at")
 
   auditLogs          AuditLog[]

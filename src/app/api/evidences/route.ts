@@ -19,52 +19,47 @@ export async function GET(req: NextRequest) {
   }
 
   const { searchParams } = new URL(req.url);
-
-  const checklistItemId = searchParams.get("checklistItemId");
-  const municipalityId = searchParams.get("municipalityId");
+  const checklistItemId  = searchParams.get("checklistItemId");
+  const municipalityId   = searchParams.get("municipalityId");
 
   let where: Record<string, unknown> = {};
 
   if (checklistItemId) {
     where = { checklistItemId };
   } else if (municipalityId) {
-    where = {
-      checklistItem: {
-        municipalityId,
-      },
-    };
+    where = { checklistItem: { municipalityId } };
   }
 
   const evidences = await db.evidence.findMany({
     where,
     include: {
       uploader: {
-        select: {
-          name: true,
-          email: true,
-        },
+        select: { name: true, email: true },
+      },
+      // ← ADICIONADO: dados do validador
+      validator: {
+        select: { name: true, email: true },
+      },
+      // ← ADICIONADO: dados do sub-documento
+      subDoc: {
+        select: { id: true, code: true, label: true, description: true },
       },
       checklistItem: {
         include: {
           criteria: {
-            select: {
-              id: true,
-              description: true,
-              axis: true,
-            },
+            select: { id: true, description: true, axis: true, axisName: true },
+          },
+          // ← ADICIONADO: nome do município
+          municipality: {
+            select: { name: true },
           },
         },
       },
     },
-    orderBy: {
-      uploadedAt: "desc",
-    },
+    orderBy: { uploadedAt: "asc" },
   });
 
-  return NextResponse.json({
-    success: true,
-    data: evidences,
-  });
+  return NextResponse.json({ success: true, data: evidences });
 }
 
 // ─── POST /api/evidences ───────────────────────────────────────────────────
@@ -81,6 +76,7 @@ export async function POST(req: NextRequest) {
 
   const {
     checklistItemId,
+    subDocId,        // ← ADICIONADO
     fileName,
     fileUrl,
     fileKey,
@@ -90,99 +86,74 @@ export async function POST(req: NextRequest) {
 
   if (!checklistItemId || !fileName || !fileUrl || !fileKey) {
     return NextResponse.json(
-      {
-        success: false,
-        error: "Campos obrigatórios",
-      },
-      {
-        status: 400,
-      }
+      { success: false, error: "Campos obrigatórios" },
+      { status: 400 }
     );
   }
 
   const evidence = await db.evidence.create({
     data: {
       checklistItemId,
+      subDocId:      subDocId ?? null, // ← ADICIONADO
       fileName,
       fileUrl,
       fileKey,
       fileSizeBytes: fileSizeBytes ?? null,
-      fileType: fileType ?? null,
-      uploadedBy: session.user.id,
-      isValid: true,
+      fileType:      fileType ?? null,
+      uploadedBy:    session.user.id,
+      isValid:       true,
     },
     include: {
+      uploader: {
+        select: { name: true, email: true },
+      },
+      validator: {
+        select: { name: true, email: true },
+      },
+      subDoc: {
+        select: { id: true, code: true, label: true, description: true },
+      },
       checklistItem: {
         include: {
           criteria: {
-            select: {
-              id: true,
-              description: true,
-            },
+            select: { id: true, description: true, axisName: true },
           },
           municipality: {
-            select: {
-              name: true,
-            },
+            select: { name: true },
           },
         },
       },
     },
   });
 
-  // AUDITORIA
+  // Auditoria
   await logAction({
-    userId: session.user.id,
-    action: "EVIDENCE_UPLOADED",
-    entityType: "Evidence",
-    entityId: evidence.id,
+    userId:      session.user.id,
+    action:      "EVIDENCE_UPLOADED",
+    entityType:  "Evidence",
+    entityId:    evidence.id,
     description: `Enviou a evidência "${evidence.fileName}"`,
   });
 
   // Notifica admins
   try {
     const admins = await db.user.findMany({
-      where: {
-        role: "admin",
-      },
-      select: {
-        email: true,
-        name: true,
-      },
+      where: { role: "admin" },
+      select: { email: true, name: true },
     });
 
     if (admins.length > 0) {
       await sendEvidenceUploadedEmail({
-        to: admins.map((a) => ({
-          email: a.email,
-          name: a.name,
-        })),
-        municipalityName:
-          evidence.checklistItem.municipality.name,
-        criterionId:
-          evidence.checklistItem.criteria.id,
-        criterionDesc:
-          evidence.checklistItem.criteria.description,
-        uploadedBy:
-          session.user.name ??
-          session.user.email ??
-          "Funcionário",
+        to: admins.map((a) => ({ email: a.email, name: a.name })),
+        municipalityName: evidence.checklistItem.municipality.name,
+        criterionId:      evidence.checklistItem.criteria.id,
+        criterionDesc:    evidence.checklistItem.criteria.description,
+        uploadedBy:       session.user.name ?? session.user.email ?? "Funcionário",
       });
     }
   } catch (err) {
-    console.error(
-      "[evidences/POST] Falha ao notificar:",
-      err
-    );
+    console.error("[evidences/POST] Falha ao notificar:", err);
   }
 
-  return NextResponse.json(
-    {
-      success: true,
-      data: evidence,
-    },
-    {
-      status: 201,
-    }
-  );
+  return NextResponse.json({ success: true, data: evidence }, { status: 201 });
 }

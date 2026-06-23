@@ -1,3 +1,4 @@
+// src/app/(dashboard)/admin/usuarios/UsuariosTable.tsx
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";

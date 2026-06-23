@@ -17,6 +17,7 @@ export default async function DashboardLayout({
         role={session.user.role as "admin" | "employee"}
         userName={session.user.name ?? "Usuário"}
         userEmail={session.user.email ?? ""}
+        userAvatarUrl={session.user.avatarUrl ?? null}
       />
       <main className="flex-1 ml-64 min-h-screen">
         {children}

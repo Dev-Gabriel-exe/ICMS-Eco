@@ -4,7 +4,8 @@
 // Roles
 // ─────────────────────────────────────────────
 
-export type Role = "admin" | "employee";
+export type Role = "admin" | "employee" | "reviewer";
+
 
 // ─────────────────────────────────────────────
 // Eixos (A–I)
