@@ -62,31 +62,9 @@ export default function MunicipioEditForm({
           population: Number(form.population),
           ibgeCode: form.ibgeCode || null,
           isActive: form.isActive,
-          municipalityIds: undefined,
-        }),
-      });
-
-      await fetch(`/api/users/${linked.map((u) => u.id).join(",")}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          municipalityId: municipality.id,
           userIds: linked.map((u) => u.id),
         }),
       });
-
-      for (const u of allUsers) {
-        const isLinked = linked.some((l) => l.id === u.id);
-        await fetch(`/api/users/${u.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            municipalityIds: isLinked
-              ? [...new Set([...(u as User & { municipalities?: string[] }).municipalities ?? [], municipality.id])]
-              : undefined,
-          }),
-        });
-      }
 
       const data = await res.json();
       setLoading(false);
@@ -179,6 +157,10 @@ export default function MunicipioEditForm({
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
+
+          <div style={{ animation: "fadeSlideUp 0.45s ease both", animationDelay: "80ms" }}>
+            <HabilitacaoLink municipioId={municipality.id} backTo={`/admin/municipios/${municipality.id}`} />
+          </div>
 
           {/* Card — Dados */}
           <div className="rounded-3xl border overflow-hidden shadow-sm"
@@ -407,7 +389,6 @@ export default function MunicipioEditForm({
           to   { opacity: 1; transform: translateY(0); }
         }
       `}</style>
-      <HabilitacaoLink municipioId={municipality.id} />
     </div>
   );
   

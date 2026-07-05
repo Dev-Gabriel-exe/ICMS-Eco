@@ -15,8 +15,10 @@ const ALL_CODES: HabDocCode[] = [
 
 export default async function AdminHabilitacaoPage({
   params,
+  searchParams,
 }: {
   params: { id: string };
+  searchParams?: { backTo?: string; from?: string };
 }) {
   await requireAdmin();
 
@@ -73,6 +75,13 @@ export default async function AdminHabilitacaoPage({
       municipioId={params.id}
       municipalityName={municipality.name}
       certameYear={activeCertame.year}
+      backTo={
+        typeof searchParams?.backTo === "string" && searchParams.backTo.startsWith("/")
+          ? searchParams.backTo
+          : typeof searchParams?.from === "string" && searchParams.from.startsWith("/")
+            ? searchParams.from
+            : "/admin/municipios"
+      }
       docs={allDocs as Parameters<typeof AdminHabilitacaoClient>[0]["docs"]}
       isHabilitado={isHabilitado}
     />

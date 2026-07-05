@@ -10,6 +10,7 @@ import { calculateMunicipalityScore, getSeloLabel } from "@/lib/scoring";
 import { formatDate, formatPopulation } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { PrintButton } from "@/components/relatorio/PrintButton";
+import { ExportDocButton } from "@/components/relatorio/ExportDocButton";
 import type { ChecklistItem, Criteria } from "@/types";
 
 export const metadata = { title: "Relatório" };
@@ -83,22 +84,22 @@ export default async function RelatorioPage({
   const seloCfg = selo ? seloConfig[selo] : seloConfig["D"];
 
   return (
-    <div className="min-h-screen bg-[#f0faf5] p-6 md:p-10 relative">
+    <div className="min-h-screen bg-[#f0faf5] p-6 md:p-10 relative print:bg-white print:p-0">
       {/* Blobs */}
       <div
-        className="pointer-events-none fixed top-0 right-0 w-[500px] h-[500px] opacity-30"
+        className="pointer-events-none fixed top-0 right-0 w-[500px] h-[500px] opacity-30 print:hidden"
         style={{ background: "radial-gradient(circle at 80% 20%, #6ee7b7 0%, transparent 60%)", filter: "blur(60px)" }}
       />
       <div
-        className="pointer-events-none fixed bottom-0 left-0 w-[400px] h-[400px] opacity-20"
+        className="pointer-events-none fixed bottom-0 left-0 w-[400px] h-[400px] opacity-20 print:hidden"
         style={{ background: "radial-gradient(circle at 20% 80%, #34d399 0%, transparent 60%)", filter: "blur(50px)" }}
       />
 
-      <div className="relative max-w-4xl mx-auto">
+      <div className="relative max-w-4xl mx-auto print:max-w-none">
 
         {/* Voltar + Imprimir */}
         <div
-          className="flex items-center justify-between mb-8"
+          className="flex items-center justify-between mb-8 no-print"
           style={{ animation: "fadeSlideUp 0.3s ease both" }}
         >
           <Link
@@ -106,14 +107,17 @@ export default async function RelatorioPage({
             className="inline-flex items-center gap-1.5 text-sm text-emerald-700/60 hover:text-emerald-700 group transition-colors duration-200"
           >
             <ArrowLeft className="w-4 h-4 transition-transform duration-200 group-hover:-translate-x-1" />
-            Painel
+            Voltar ao painel
           </Link>
-          <PrintButton />
+          <div className="flex items-center gap-2">
+            <ExportDocButton href={`/api/relatorios/municipio/${municipioId}`} />
+            <PrintButton />
+          </div>
         </div>
 
         {/* Cabeçalho do relatório */}
         <div
-          className="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden mb-5"
+          className="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden mb-5 print:shadow-none print:border-slate-300"
           style={{ animation: "fadeSlideUp 0.38s ease both", animationDelay: "40ms" }}
         >
           <div className="px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-emerald-50 to-white flex items-center gap-2">
@@ -172,7 +176,7 @@ export default async function RelatorioPage({
 
         {/* Tabela de eixos */}
         <div
-          className="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden mb-5"
+          className="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden mb-5 print:shadow-none print:border-slate-300"
           style={{ animation: "fadeSlideUp 0.42s ease both", animationDelay: "120ms" }}
         >
           <div className="px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-emerald-50 to-white flex items-center justify-between">
@@ -263,7 +267,7 @@ export default async function RelatorioPage({
 
         {/* Rodapé */}
         <p
-          className="text-center text-xs text-slate-400 mt-2"
+          className="text-center text-xs text-slate-400 mt-2 print:mt-4"
           style={{ animation: "fadeSlideUp 0.4s ease both", animationDelay: "400ms" }}
         >
           Relatório gerado em {formatDate(new Date())} · Sistema ICMS-ECO

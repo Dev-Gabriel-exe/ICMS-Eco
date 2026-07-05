@@ -49,13 +49,14 @@ export async function PUT(
     return NextResponse.json({ success: false, error: "Acesso negado" }, { status: 403 });
   }
 
-  const { name, isActive, municipalityIds } = await req.json();
+  const { name, isActive, role, municipalityIds } = await req.json();
 
   await db.user.update({
     where: { id: params.id },
     data: {
       ...(name && { name }),
       ...(isActive !== undefined && { isActive }),
+      ...(role && ["employee", "reviewer"].includes(role) && { role }),
     },
   });
 

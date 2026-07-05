@@ -3,7 +3,9 @@
 
 import { useState, useRef } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import {
+  ArrowLeft,
   Camera, Loader2, CheckCircle2, AlertTriangle,
   User, Mail, Lock, Eye, EyeOff,
 } from "lucide-react";
@@ -395,6 +397,7 @@ function SenhaSection() {
 
 export default function PerfilPage() {
   const { data: session, update } = useSession();
+  const router = useRouter();
   const [avatarUrl, setAvatarUrl] = useState<string | null | undefined>(
     session?.user?.avatarUrl ?? null
   );
@@ -403,14 +406,25 @@ export default function PerfilPage() {
     setAvatarUrl(url);
     // Atualiza a sessão NextAuth para refletir imediatamente no sidebar
     await update({ avatarUrl: url });
+    router.refresh();
   }
 
   if (!session?.user) return null;
 
-  const { name = "Usuário", email = "" } = session.user;
+  const name = session.user.name ?? "Usuário";
+  const email = session.user.email ?? "";
 
   return (
     <div className="max-w-2xl mx-auto px-6 py-8 space-y-6">
+      <button
+        type="button"
+        onClick={() => router.back()}
+        className="inline-flex items-center gap-1.5 text-sm text-emerald-700/60 hover:text-emerald-700 group transition-colors duration-200"
+      >
+        <ArrowLeft className="w-4 h-4 transition-transform duration-200 group-hover:-translate-x-1" />
+        Voltar
+      </button>
+
       {/* Header */}
       <div>
         <h1 className="text-xl font-bold text-slate-900">Meu perfil</h1>

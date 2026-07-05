@@ -66,6 +66,7 @@ export function MobileNav({
 }: MobileNavProps) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const homeHref = role === "admin" ? "/admin" : "/municipio";
 
   const isActive = (href: string, exact = false) =>
     exact ? pathname === href : pathname.startsWith(href);
@@ -86,14 +87,14 @@ export function MobileNav({
         </button>
 
         {/* Logo */}
-        <div className="flex items-center gap-2 flex-1 min-w-0">
+        <Link href={homeHref} className="flex items-center gap-2 flex-1 min-w-0">
           <div className="w-6 h-6 bg-brand-600 rounded-md flex items-center justify-center shrink-0">
             <Leaf className="w-3.5 h-3.5 text-white" />
           </div>
           <span className="text-white font-semibold text-sm truncate">
             {pageTitle ?? "ICMS-ECO"}
           </span>
-        </div>
+        </Link>
 
         {/* Avatar */}
         <div className="w-8 h-8 rounded-full bg-brand-700 flex items-center justify-center shrink-0">
@@ -121,11 +122,13 @@ export function MobileNav({
         {/* Header do drawer */}
         <div className="h-14 px-4 flex items-center justify-between border-b border-surface-800 shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 bg-brand-600 rounded-md flex items-center justify-center">
+            <Link href={homeHref} className="w-7 h-7 bg-brand-600 rounded-md flex items-center justify-center shrink-0">
               <Leaf className="w-4 h-4 text-white" />
-            </div>
+            </Link>
             <div>
-              <div className="text-white text-sm font-semibold leading-none">ICMS-ECO</div>
+              <Link href={homeHref} className="text-white text-sm font-semibold leading-none hover:opacity-80">
+                ICMS-ECO
+              </Link>
               <div className="text-surface-500 text-xs mt-0.5">
                 {role === "admin" ? "Administrador" : "Gestão Municipal"}
               </div>

@@ -145,11 +145,11 @@ function ActionMenu({
     >
       {/* Abrir painel */}
       <Link
-        href={`/municipio/${municipality.id}`}
-        onMouseDown={() => setOpen(false)}
+        href={`/municipio/${municipality.id}?backTo=/admin/municipios`}
+        onClick={() => setOpen(false)}
         style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px",
           fontSize: 14, color: "#334155", textDecoration: "none",
-          transition: "background 0.1s" }}
+          transition: "background 0.1s", cursor: "pointer" }}
         onMouseEnter={e => (e.currentTarget.style.background = "#f0fdf4")}
         onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
       >
@@ -160,10 +160,10 @@ function ActionMenu({
       {/* Editar */}
       <Link
         href={`/admin/municipios/${municipality.id}`}
-        onMouseDown={() => setOpen(false)}
+        onClick={() => setOpen(false)}
         style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px",
           fontSize: 14, color: "#334155", textDecoration: "none",
-          transition: "background 0.1s" }}
+          transition: "background 0.1s", cursor: "pointer" }}
         onMouseEnter={e => (e.currentTarget.style.background = "#f8fafc")}
         onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
       >
@@ -187,7 +187,7 @@ function ActionMenu({
         {municipality.isActive
           ? <PowerOff style={{ width: 16, height: 16, color: "#f59e0b", flexShrink: 0 }} />
           : <Power style={{ width: 16, height: 16, color: "#10b981", flexShrink: 0 }} />}
-        {municipality.isActive ? "Desativar município" : "Reativar município"}
+        {municipality.isActive ? "Inativar Município" : "Ativar Município"}
       </button>
 
       <div style={{ height: 1, background: "#f1f5f9", margin: "0 12px" }} />
@@ -203,7 +203,7 @@ function ActionMenu({
         onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
       >
         <Trash2 style={{ width: 16, height: 16, color: "#f87171", flexShrink: 0 }} />
-        Excluir permanentemente
+        Excluir
       </button>
 
       <style>{`

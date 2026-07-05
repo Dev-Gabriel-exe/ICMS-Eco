@@ -5,7 +5,7 @@ import { useState } from "react";
 import {
   CheckCircle2, XCircle, Clock, Circle, ChevronRight,
   ChevronDown, ChevronUp, Eye, Trash2, Loader2,
-  AlertTriangle, FileText, Upload, RefreshCw,
+  AlertTriangle, FileText, Upload, RefreshCw, Download,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatFileSize, getFileIcon } from "@/lib/utils";
@@ -55,7 +55,9 @@ interface ChecklistItemData {
 interface Props {
   municipioId: string;
   items: ChecklistItemData[];
-  isAdmin: boolean;
+  canReview: boolean;
+  canDeleteEvidence: boolean;
+  initialFilter?: "all" | "pending" | "approved" | "rejected";
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -101,6 +103,10 @@ function ReviewModal({
 
   async function submit() {
     if (isReject && !comment.trim()) { setError("Informe o motivo da rejeição."); return; }
+    if (!isReject && !allCriticalOk) {
+      setError("Marque todos os itens obrigatórios como 'Sim' antes de aprovar.");
+      return;
+    }
     setLoading(true); setError("");
     try {
       const res  = await fetch(`/api/evidences/${ev.id}`, {
@@ -137,8 +143,9 @@ function ReviewModal({
   });
 
   const visibleChecks = checklistFields.filter(f => f.show);
-  const criticalFails = visibleChecks.filter(f => f.critical && checks[f.key] === false);
-  const allCriticalOk = criticalFails.length === 0;
+  const criticalChecks = visibleChecks.filter(f => f.critical);
+  const criticalFails = criticalChecks.filter(f => checks[f.key] === false);
+  const allCriticalOk = criticalChecks.every(f => checks[f.key] === true);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
@@ -252,7 +259,10 @@ function ReviewModal({
             className="flex-1 py-2.5 rounded-xl text-sm font-medium border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors">
             Cancelar
           </button>
-          <button type="button" onClick={submit} disabled={loading}
+          <button
+            type="button"
+            onClick={submit}
+            disabled={loading || (!isReject && !allCriticalOk)}
             className={cn("flex-1 py-2.5 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2 transition-all disabled:opacity-50",
               isReject ? "bg-red-600 hover:bg-red-700" : "bg-emerald-600 hover:bg-emerald-700")}>
             {loading ? <><Loader2 size={13} className="animate-spin" />Salvando…</>
@@ -268,11 +278,12 @@ function ReviewModal({
 // ─── Linha de arquivo ────────────────────────────────────────────────────────
 
 function FileRow({
-  ev, isAdmin,
+  ev, canReview, canDeleteEvidence,
   onReview, onDelete,
 }: {
   ev: EvidenceItem;
-  isAdmin: boolean;
+  canReview: boolean;
+  canDeleteEvidence: boolean;
   onReview: (ev: EvidenceItem, action: "approve" | "reject") => void;
   onDelete: (evId: string) => void;
 }) {
@@ -283,6 +294,8 @@ function FileRow({
 
   const isImage = ev.fileType?.startsWith("image/") ?? false;
   const isPdf   = ev.fileType === "application/pdf";
+
+  const downloadHref = `/api/files/download?url=${encodeURIComponent(ev.fileUrl)}&name=${encodeURIComponent(ev.fileName)}`;
 
   async function handleDelete() {
     if (!confirm(`Excluir "${ev.fileName}"?`)) return;
@@ -297,7 +310,7 @@ function FileRow({
     } finally { setDeleting(false); }
   }
 
-  const canDelete = isAdmin || ev.validationStatus === "pending";
+  const canDelete = canDeleteEvidence || ev.validationStatus === "pending";
 
   return (
     <div className={cn(
@@ -368,13 +381,17 @@ function FileRow({
                   className="p-1.5 rounded-lg text-slate-400 hover:text-brand-600 hover:bg-brand-50 transition-colors">
                   <Eye size={13} />
                 </a>
-                {isAdmin && ev.validationStatus !== "approved" && (
+                <a href={downloadHref} title="Baixar" download={ev.fileName}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors">
+                  <Download size={13} />
+                </a>
+                {canReview && ev.validationStatus !== "approved" && (
                   <button type="button" title="Aprovar" onClick={() => onReview(ev, "approve")}
                     className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors">
                     <CheckCircle2 size={13} />
                   </button>
                 )}
-                {isAdmin && ev.validationStatus !== "rejected" && (
+                {canReview && ev.validationStatus !== "rejected" && (
                   <button type="button" title="Rejeitar" onClick={() => onReview(ev, "reject")}
                     className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors">
                     <XCircle size={13} />
@@ -419,7 +436,7 @@ function FileRow({
       </div>
 
       {/* Barra de ação rápida para admin em mobile (sempre visível) */}
-      {isAdmin && ev.validationStatus === "pending" && (
+      {canReview && ev.validationStatus === "pending" && (
         <div className="flex border-t border-slate-100 sm:hidden">
           <button type="button" onClick={() => onReview(ev, "approve")}
             className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors">
@@ -439,10 +456,11 @@ function FileRow({
 // ─── Card de critério ────────────────────────────────────────────────────────
 
 function CriterionCard({
-  item, isAdmin, onReview, onDelete,
+  item, canReview, canDeleteEvidence, onReview, onDelete,
 }: {
   item: ChecklistItemData;
-  isAdmin: boolean;
+  canReview: boolean;
+  canDeleteEvidence: boolean;
   onReview: (ev: EvidenceItem, action: "approve" | "reject") => void;
   onDelete: (itemId: string, evId: string) => void;
 }) {
@@ -496,7 +514,11 @@ function CriterionCard({
       {open && (
         <div className="border-t border-slate-100 px-4 py-3 flex flex-col gap-2 bg-slate-50/30">
           {item.evidences.map(ev => (
-            <FileRow key={ev.id} ev={ev} isAdmin={isAdmin}
+            <FileRow
+              key={ev.id}
+              ev={ev}
+              canReview={canReview}
+              canDeleteEvidence={canDeleteEvidence}
               onReview={onReview}
               onDelete={evId => onDelete(item.id, evId)} />
           ))}
@@ -509,12 +531,13 @@ function CriterionCard({
 // ─── Card de eixo ────────────────────────────────────────────────────────────
 
 function AxisCard({
-  axis, axisName, items, isAdmin, onReview, onDelete,
+  axis, axisName, items, canReview, canDeleteEvidence, onReview, onDelete,
 }: {
   axis: string;
   axisName: string;
   items: ChecklistItemData[];
-  isAdmin: boolean;
+  canReview: boolean;
+  canDeleteEvidence: boolean;
   onReview: (ev: EvidenceItem, action: "approve" | "reject") => void;
   onDelete: (itemId: string, evId: string) => void;
 }) {
@@ -569,7 +592,11 @@ function AxisCard({
       {open && (
         <div className="border-t border-slate-100 px-5 py-4 flex flex-col gap-2">
           {items.map(item => (
-            <CriterionCard key={item.id} item={item} isAdmin={isAdmin}
+            <CriterionCard
+              key={item.id}
+              item={item}
+              canReview={canReview}
+              canDeleteEvidence={canDeleteEvidence}
               onReview={onReview} onDelete={onDelete} />
           ))}
         </div>
@@ -580,10 +607,16 @@ function AxisCard({
 
 // ─── Componente principal ────────────────────────────────────────────────────
 
-export default function EvidenciasClient({ municipioId, items: initialItems, isAdmin }: Props) {
+export default function EvidenciasClient({
+  municipioId,
+  items: initialItems,
+  canReview,
+  canDeleteEvidence,
+  initialFilter = "all",
+}: Props) {
   const [items, setItems]     = useState<ChecklistItemData[]>(initialItems);
   const [reviewing, setReviewing] = useState<{ ev: EvidenceItem; action: "approve" | "reject" } | null>(null);
-  const [filter, setFilter]   = useState<"all" | "pending" | "approved" | "rejected">("all");
+  const [filter, setFilter]   = useState<"all" | "pending" | "approved" | "rejected">(initialFilter);
 
   function handleReviewDone(evId: string, status: ValidationStatus, comment: string) {
     setItems(prev => prev.map(item => ({
@@ -684,7 +717,8 @@ export default function EvidenciasClient({ municipioId, items: initialItems, isA
                   axis={group.axis}
                   axisName={group.axisName}
                   items={group.items}
-                  isAdmin={isAdmin}
+                  canReview={canReview}
+                  canDeleteEvidence={canDeleteEvidence}
                   onReview={(ev, action) => setReviewing({ ev, action })}
                   onDelete={handleDelete}
                 />

@@ -391,7 +391,7 @@ export async function GET(
   const safeMunicipio = municipality.name.replace(/[^a-zA-Z0-9-]/g, "_");
   const fileName = `Relatorio_${safeCriterio}_${safeMunicipio}_${certame.year}.docx`;
 
-  return new NextResponse(buffer, {
+  return new NextResponse(new Uint8Array(buffer), {
     status: 200,
     headers: {
       "Content-Type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",

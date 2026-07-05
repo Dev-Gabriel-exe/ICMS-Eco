@@ -11,6 +11,7 @@ import {
   AlertTriangle, CheckCircle2, Circle, ChevronRight,
   Building2, Users, Hash, ClipboardList, FileBarChart2,
   FileText, TrendingUp, FileCheck,
+  ArrowLeft,
 } from "lucide-react";
 
 export async function generateMetadata({ params }: { params: { municipioId: string } }) {
@@ -27,8 +28,10 @@ const seloConfig = {
 
 export default async function MunicipioDashboardPage({
   params,
+  searchParams,
 }: {
   params: { municipioId: string };
+  searchParams?: { backTo?: string };
 }) {
   const session = await auth();
   if (!session?.user) redirect("/login");
@@ -69,6 +72,14 @@ export default async function MunicipioDashboardPage({
 
   const selo = score?.seloEstimado as keyof typeof seloConfig | null | undefined;
   const seloCfg = selo ? seloConfig[selo] : seloConfig["D"];
+  const backTo = typeof searchParams?.backTo === "string" && searchParams.backTo.startsWith("/")
+    ? searchParams.backTo
+    : "/municipio";
+  const backLabel = {
+    "/municipio": "Painel Geral",
+    "/admin/municipios": "Municípios",
+    "/admin": "Painel admin",
+  }[backTo] ?? "Voltar";
 
   return (
     <div className="min-h-screen bg-[#f0faf5] p-6 md:p-10 relative">
@@ -83,6 +94,16 @@ export default async function MunicipioDashboardPage({
       />
 
       <div className="relative max-w-5xl mx-auto">
+
+        {/* Voltar */}
+        <Link
+          href={backTo}
+          className="inline-flex items-center gap-1.5 text-sm text-emerald-700/60 hover:text-emerald-700 mb-6 group transition-colors duration-200"
+          style={{ animation: "fadeSlideUp 0.3s ease both" }}
+        >
+          <ArrowLeft className="w-4 h-4 transition-transform duration-200 group-hover:-translate-x-1" />
+          {backLabel}
+        </Link>
 
         {/* Header */}
         <div

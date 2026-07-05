@@ -4,18 +4,22 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Loader2, X, User, MapPin, CheckCircle2, AlertTriangle, MapPinPlus } from "lucide-react";
+import { ArrowLeft, Loader2, X, User, MapPin, CheckCircle2, AlertTriangle, MapPinPlus, Shield } from "lucide-react";
 
 interface Municipality { id: string; name: string; }
 interface Props {
-  user: { id: string; name: string; email: string; isActive: boolean };
+  user: { id: string; name: string; email: string; role: "admin" | "employee" | "reviewer"; isActive: boolean };
   linkedMunicipalities: Municipality[];
   allMunicipalities: Municipality[];
 }
 
 export default function UserEditForm({ user, linkedMunicipalities, allMunicipalities }: Props) {
   const router = useRouter();
-  const [form, setForm] = useState({ name: user.name, isActive: user.isActive });
+  const [form, setForm] = useState({
+    name: user.name,
+    role: user.role,
+    isActive: user.isActive,
+  });
   const [linked, setLinked] = useState<Municipality[]>(linkedMunicipalities);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -31,7 +35,12 @@ export default function UserEditForm({ user, linkedMunicipalities, allMunicipali
     const res = await fetch(`/api/users/${user.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: form.name, isActive: form.isActive, municipalityIds: linked.map((m) => m.id) }),
+      body: JSON.stringify({
+        name: form.name,
+        role: form.role,
+        isActive: form.isActive,
+        municipalityIds: linked.map((m) => m.id),
+      }),
     });
 
     const data = await res.json();
@@ -102,7 +111,7 @@ export default function UserEditForm({ user, linkedMunicipalities, allMunicipali
               <span className="text-xs font-semibold text-emerald-700 uppercase tracking-widest">Dados pessoais</span>
             </div>
 
-            <div className="p-6 space-y-5">
+          <div className="p-6 space-y-5">
               <div>
                 <label className="block text-xs font-semibold text-slate-500 uppercase tracking-widest mb-2">Nome</label>
                 <input
@@ -123,6 +132,43 @@ export default function UserEditForm({ user, linkedMunicipalities, allMunicipali
                 <div className="w-full px-4 py-3 rounded-xl border text-sm text-slate-400 bg-slate-50/80 select-all"
                   style={{ borderColor: "rgba(203,213,225,0.6)" }}>
                   {user.email}
+                </div>
+              </div>
+
+              {/* Perfil de acesso */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                  <Shield className="w-3.5 h-3.5" /> Perfil de acesso
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    {
+                      value: "employee" as const,
+                      label: "Funcionário",
+                      desc: "Envia evidências e preenche o checklist do município",
+                    },
+                    {
+                      value: "reviewer" as const,
+                      label: "Revisor",
+                      desc: "Aprova e rejeita evidências, sem acesso administrativo",
+                    },
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setForm({ ...form, role: opt.value })}
+                      className={`flex flex-col items-start gap-1 px-4 py-3 rounded-xl border text-left transition-all ${
+                        form.role === opt.value
+                          ? "border-emerald-400 bg-emerald-50 ring-2 ring-emerald-300/50"
+                          : "border-slate-200 bg-white hover:border-emerald-200 hover:bg-emerald-50/30"
+                      }`}
+                    >
+                      <span className={`text-sm font-semibold ${form.role === opt.value ? "text-emerald-800" : "text-slate-700"}`}>
+                        {opt.label}
+                      </span>
+                      <span className="text-[11px] text-slate-500 leading-tight">{opt.desc}</span>
+                    </button>
+                  ))}
                 </div>
               </div>
 

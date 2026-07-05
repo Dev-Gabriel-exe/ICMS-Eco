@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: "Acesso negado" }, { status: 403 });
   }
 
-  const { name, email } = await req.json();
+  const { name, email, role } = await req.json();
 
   if (!name?.trim() || !email?.trim()) {
     return NextResponse.json({ success: false, error: "Nome e e-mail são obrigatórios" }, { status: 400 });
@@ -38,6 +38,8 @@ export async function POST(req: NextRequest) {
   if (!isValidEmail(email)) {
     return NextResponse.json({ success: false, error: "E-mail inválido" }, { status: 400 });
   }
+
+  const normalizedRole = role === "reviewer" ? "reviewer" : "employee";
 
   const existing = await db.user.findUnique({ where: { email: email.toLowerCase() } });
   if (existing) {
@@ -55,7 +57,7 @@ export async function POST(req: NextRequest) {
       name: name.trim(),
       email: email.toLowerCase().trim(),
       passwordHash,
-      role: "employee",
+      role: normalizedRole,
     },
   });
 

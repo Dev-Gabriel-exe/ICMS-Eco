@@ -79,7 +79,7 @@ export default async function AtividadesPage({ searchParams }: PageProps) {
       take: 200,
     }),
     db.user.findMany({
-      where: { role: "employee" },
+      where: { role: { in: ["employee", "reviewer"] } },
       include: {
         evidences: true,
         userMunicipalities: { include: { municipality: true } },

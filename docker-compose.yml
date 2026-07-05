@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: icms-eco-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: icmseco
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - icms-eco-postgres-data:/var/lib/postgresql/data
+
+volumes:
+  icms-eco-postgres-data:

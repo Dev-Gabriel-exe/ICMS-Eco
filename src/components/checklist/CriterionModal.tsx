@@ -132,8 +132,6 @@ function SubDocCard({
       });
       if (!r2.ok) throw new Error("Falha ao enviar para o servidor");
 
-      const fileUrl = `${process.env.NEXT_PUBLIC_R2_PUBLIC_URL}/${fileKey}`;
-
       let itemId = checklistItemId;
       if (!itemId) {
         const chk  = await fetch("/api/checklist", {
@@ -151,7 +149,7 @@ function SubDocCard({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           checklistItemId: itemId, subDocId: subDoc.id,
-          fileName: file.name, fileUrl, fileKey,
+          fileName: file.name, fileKey,
           fileSizeBytes: file.size, fileType: file.type,
         }),
       });
@@ -401,8 +399,6 @@ function GenericUploader({
       });
       if (!r2.ok) throw new Error("Falha ao enviar");
 
-      const fileUrl = `${process.env.NEXT_PUBLIC_R2_PUBLIC_URL}/${fileKey}`;
-
       let itemId = checklistItemId;
       if (!itemId) {
         const chk  = await fetch("/api/checklist", {
@@ -419,7 +415,7 @@ function GenericUploader({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           checklistItemId: itemId,
-          fileName: file.name, fileUrl, fileKey,
+          fileName: file.name, fileKey,
           fileSizeBytes: file.size, fileType: file.type,
         }),
       });

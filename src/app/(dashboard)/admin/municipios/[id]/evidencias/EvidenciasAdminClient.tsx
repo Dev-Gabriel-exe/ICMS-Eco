@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import {
   ArrowLeft, CheckCircle2, XCircle, Clock, Eye, Trash2,
   Loader2, AlertTriangle, FileText, ChevronDown, ChevronUp,
-  Filter, RefreshCw,
+  Filter, RefreshCw, Download,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatFileSize, getFileIcon } from "@/lib/utils";
@@ -174,6 +174,8 @@ function EvidenceRow({
   const StatusIcon = ev.validationStatus === "approved" ? CheckCircle2
     : ev.validationStatus === "rejected" ? XCircle : Clock;
 
+  const downloadHref = `/api/files/download?url=${encodeURIComponent(ev.fileUrl)}&name=${encodeURIComponent(ev.fileName)}`;
+
   return (
     <div className={cn(
       "flex items-start gap-3 px-4 py-3 rounded-xl border transition-colors",
@@ -226,6 +228,10 @@ function EvidenceRow({
         <a href={ev.fileUrl} target="_blank" rel="noopener noreferrer" title="Ver arquivo"
           className="p-1.5 rounded-lg text-slate-400 hover:text-brand-600 hover:bg-brand-50 transition-colors">
           <Eye size={14} />
+        </a>
+        <a href={downloadHref} title="Baixar" download={ev.fileName}
+          className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors">
+          <Download size={14} />
         </a>
 
         {ev.validationStatus !== "approved" && (

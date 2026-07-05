@@ -93,12 +93,13 @@ export default async function ChecklistEixoPage({
 
         {/* Voltar */}
         <Link
-  href={`/municipio/${municipioId}`}
-  className="inline-flex items-center gap-1.5 text-sm text-emerald-700/60 hover:text-emerald-700 mb-8 group transition-colors duration-200"
->
-  <ArrowLeft className="w-4 h-4 transition-transform duration-200 group-hover:-translate-x-1" />
-  Voltar ao painel
-</Link>
+          href={`/municipio/${municipioId}`}
+          className="inline-flex items-center gap-1.5 text-sm text-emerald-700/60 hover:text-emerald-700 mb-6 group transition-colors duration-200"
+          style={{ animation: "fadeSlideUp 0.3s ease both" }}
+        >
+          <ArrowLeft className="w-4 h-4 transition-transform duration-200 group-hover:-translate-x-1" />
+          Voltar ao painel
+        </Link>
 
         {/* Header */}
         <div

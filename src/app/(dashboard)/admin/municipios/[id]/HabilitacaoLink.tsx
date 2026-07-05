@@ -10,9 +10,10 @@ type HabStatus = "not_started" | "pending" | "approved" | "rejected" | "habilita
  
 interface Props {
   municipioId: string;
+  backTo?: string;
 }
- 
-export function HabilitacaoLink({ municipioId }: Props) {
+
+export function HabilitacaoLink({ municipioId, backTo = "/admin/municipios" }: Props) {
   const [status, setStatus] = useState<HabStatus>("not_started");
   const [loading, setLoading] = useState(true);
  
@@ -47,7 +48,7 @@ export function HabilitacaoLink({ municipioId }: Props) {
  
   return (
     <Link
-      href={`/admin/municipios/${municipioId}/habilitacao`}
+      href={`/admin/municipios/${municipioId}/habilitacao?backTo=${encodeURIComponent(backTo)}`}
       className={cn(
         "flex items-center gap-3 px-4 py-3.5 rounded-xl border bg-white",
         "transition-all duration-150 hover:shadow-sm hover:border-emerald-300 group",

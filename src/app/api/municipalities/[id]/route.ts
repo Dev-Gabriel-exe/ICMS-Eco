@@ -25,16 +25,41 @@ export async function PUT(
     return NextResponse.json({ success: false, error: "Acesso negado" }, { status: 403 });
   }
 
-  const { name, population, ibgeCode, isActive } = await req.json();
+  const { name, population, ibgeCode, isActive, userIds } = await req.json();
 
-  const updated = await db.municipality.update({
-    where: { id: params.id },
-    data: {
-      ...(name && { name: name.trim() }),
-      ...(population && { population: Number(population) }),
-      ...(ibgeCode !== undefined && { ibgeCode: ibgeCode?.trim() || null }),
-      ...(isActive !== undefined && { isActive }),
-    },
+  const updated = await db.$transaction(async (tx) => {
+    const municipality = await tx.municipality.update({
+      where: { id: params.id },
+      data: {
+        ...(typeof name === "string" && { name: name.trim() }),
+        ...(population !== undefined && { population: Number(population) }),
+        ...(ibgeCode !== undefined && { ibgeCode: ibgeCode?.trim() || null }),
+        ...(isActive !== undefined && { isActive: Boolean(isActive) }),
+      },
+    });
+
+    if (Array.isArray(userIds)) {
+      await tx.userMunicipality.deleteMany({
+        where: { municipalityId: params.id },
+      });
+
+      const uniqueUserIds = [...new Set(
+        userIds
+          .filter((userId: unknown): userId is string => typeof userId === "string" && userId.length > 0)
+      )];
+
+      if (uniqueUserIds.length > 0) {
+        await tx.userMunicipality.createMany({
+          data: uniqueUserIds.map((userId) => ({
+            userId,
+            municipalityId: params.id,
+          })),
+          skipDuplicates: true,
+        });
+      }
+    }
+
+    return municipality;
   });
 
   return NextResponse.json({ success: true, data: updated });

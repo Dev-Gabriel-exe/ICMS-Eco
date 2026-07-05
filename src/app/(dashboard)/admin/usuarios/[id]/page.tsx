@@ -11,7 +11,7 @@ export default async function EditUserPage({ params }: { params: { id: string } 
 
   const [user, allMunicipalities] = await Promise.all([
     db.user.findUnique({
-      where: { id: params.id, role: "employee" },
+      where: { id: params.id },
       include: {
         userMunicipalities: { include: { municipality: { select: { id: true, name: true } } } },
       },
@@ -31,6 +31,7 @@ export default async function EditUserPage({ params }: { params: { id: string } 
         id: user.id,
         name: user.name,
         email: user.email,
+        role: user.role,
         isActive: user.isActive ?? true,
       }}
       linkedMunicipalities={user.userMunicipalities.map((um) => um.municipality)}

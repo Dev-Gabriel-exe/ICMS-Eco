@@ -15,7 +15,7 @@ export const metadata = { title: "Painel Geral" };
 async function getStats() {
   const [municipalities, users, activeCertame] = await Promise.all([
     db.municipality.count({ where: { isActive: true } }),
-    db.user.count({ where: { isActive: true, role: "employee" } }),
+    db.user.count({ where: { isActive: true, role: { in: ["employee", "reviewer"] } } }),
     db.certame.findFirst({ where: { isActive: true, isClosed: false }, orderBy: { year: "desc" } }),
   ]);
   const pendingEvidences = await db.evidence.count({ where: { validationStatus: "pending" } });
@@ -109,7 +109,7 @@ export default async function AdminDashboardPage() {
               label: "Evidências pendentes",
               value: stats.pendingEvidences,
               color: stats.pendingEvidences > 0 ? "amber" as const : "green" as const,
-              href: "/admin/municipios",
+              href: "/pendencias",
             },
             {
               icon: TrendingUp,
@@ -220,7 +220,7 @@ export default async function AdminDashboardPage() {
 
                   {/* Ação */}
                   <Link
-                    href={`/municipio/${m.id}`}
+                    href={`/municipio/${m.id}?backTo=/admin`}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-300 transition-all duration-150 hover:-translate-y-px shrink-0"
                   >
                     <ExternalLink className="w-3 h-3" />

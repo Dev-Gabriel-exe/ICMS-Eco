@@ -40,6 +40,7 @@ interface Props {
   municipioId: string;
   municipalityName: string;
   certameYear: number;
+  backTo?: string;
   docs: HabDoc[];
   isHabilitado: boolean;
 }
@@ -476,7 +477,7 @@ function AdminDocCard({ doc, municipioId, onRefresh, onValidate }: {
 // ─── Componente principal ─────────────────────────────────────────────────────
 
 export default function AdminHabilitacaoClient({
-  municipioId, municipalityName, certameYear, docs: initialDocs, isHabilitado: initialHabilitado,
+  municipioId, municipalityName, certameYear, backTo = "/admin/municipios", docs: initialDocs, isHabilitado: initialHabilitado,
 }: Props) {
   const router = useRouter();
   const [docs,         setDocs]         = useState<HabDoc[]>(initialDocs);
@@ -522,10 +523,10 @@ export default function AdminHabilitacaoClient({
         {/* Header */}
         <div>
           <button type="button"
-            onClick={() => router.push("/admin/municipios")}
+            onClick={() => router.push(backTo)}
             className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-emerald-700 transition-colors mb-3 w-fit">
             <ArrowLeft size={14} />
-            Voltar para municípios
+            {backTo.startsWith("/admin/municipios/") ? "Voltar à edição" : "Voltar para municípios"}
           </button>
 
           <div className="flex items-start justify-between gap-4 flex-wrap">

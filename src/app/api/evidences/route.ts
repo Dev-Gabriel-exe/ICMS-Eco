@@ -6,6 +6,14 @@ import { db } from "@/lib/db";
 import { sendEvidenceUploadedEmail } from "@/lib/brevo";
 import { logAction } from "@/lib/audit";
 
+function getPublicFileUrl(fileKey: string): string {
+  const publicUrl = process.env.CLOUDFLARE_R2_PUBLIC_URL;
+  if (!publicUrl) {
+    throw new Error("CLOUDFLARE_R2_PUBLIC_URL não configurada");
+  }
+  return `${publicUrl}/${fileKey}`;
+}
+
 // ─── GET /api/evidences?checklistItemId= ───────────────────────────────────
 
 export async function GET(req: NextRequest) {
@@ -78,16 +86,28 @@ export async function POST(req: NextRequest) {
     checklistItemId,
     subDocId,        // ← ADICIONADO
     fileName,
-    fileUrl,
     fileKey,
     fileSizeBytes,
     fileType,
   } = await req.json();
 
-  if (!checklistItemId || !fileName || !fileUrl || !fileKey) {
+  if (!checklistItemId || !fileName || !fileKey) {
     return NextResponse.json(
       { success: false, error: "Campos obrigatórios" },
       { status: 400 }
+    );
+  }
+
+  let fileUrl: string;
+  try {
+    fileUrl = getPublicFileUrl(fileKey);
+  } catch (err) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: err instanceof Error ? err.message : "Falha ao montar URL do arquivo",
+      },
+      { status: 500 }
     );
   }
 

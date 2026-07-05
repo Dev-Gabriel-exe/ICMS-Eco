@@ -11,7 +11,7 @@ export default async function UsuariosPage() {
   await requireAdmin();
 
   const users = await db.user.findMany({
-    where: { role: "employee" },
+    where: { role: { in: ["employee", "reviewer"] } },
     orderBy: { name: "asc" },
     include: {
       userMunicipalities: {
@@ -87,26 +87,7 @@ export default async function UsuariosPage() {
           ))}
         </div>
 
-        {/* Card tabela */}
-        <div
-          className="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden"
-          style={{ animation: "fadeSlideUp 0.45s ease both", animationDelay: "120ms" }}
-        >
-          {/* Header do card */}
-          <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-emerald-50 to-white">
-            <div className="flex items-center gap-2">
-              <Users className="w-3.5 h-3.5 text-emerald-600" />
-              <span className="text-xs font-bold text-emerald-700 uppercase tracking-widest">
-                Equipe cadastrada
-              </span>
-            </div>
-            <span className="text-xs text-slate-400 font-medium">
-              {users.length} {users.length === 1 ? "registro" : "registros"}
-            </span>
-          </div>
-
-          <UsuariosTable initialData={users} />
-        </div>
+        <UsuariosTable initialData={users} />
       </div>
 
       <style>{`

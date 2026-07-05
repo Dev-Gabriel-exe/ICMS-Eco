@@ -432,9 +432,9 @@ export default function MunicipalHabilitacaoPage() {
         <button
           type="button"
           onClick={() => router.push(backHref)}
-          className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-emerald-700 transition-colors w-fit mb-1"
+          className="inline-flex items-center gap-1.5 text-sm text-emerald-700/60 hover:text-emerald-700 group transition-colors duration-200 w-fit mb-6"
         >
-          <ArrowLeft size={14} />
+          <ArrowLeft className="w-4 h-4 transition-transform duration-200 group-hover:-translate-x-1" />
           {backLabel}
         </button>
 

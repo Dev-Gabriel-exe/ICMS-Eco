@@ -94,7 +94,7 @@ export const createUserSchema = z.object({
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
       "Senha deve conter letras maiúsculas, minúsculas e números"
     ),
-  role: z.enum(["admin", "employee"]).default("employee"),
+  role: z.enum(["admin", "employee", "reviewer"]).default("employee"),
   municipalityIds: z
     .array(z.string().uuid("ID inválido"))
     .optional()
@@ -104,7 +104,7 @@ export const createUserSchema = z.object({
 export const updateUserSchema = z.object({
   name: z.string().min(2).max(100).trim().optional(),
   email: z.string().email().toLowerCase().trim().optional(),
-  role: z.enum(["admin", "employee"]).optional(),
+  role: z.enum(["admin", "employee", "reviewer"]).optional(),
   isActive: z.boolean().optional(),
 });
 

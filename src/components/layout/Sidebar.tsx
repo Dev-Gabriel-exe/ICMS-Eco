@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import {
   Leaf, LayoutDashboard, Building2, Users, ChevronRight,
   LogOut, FileText, FileBarChart2,
@@ -17,6 +17,7 @@ interface SidebarProps {
   userAvatarUrl?: string | null;
   municipalityId?: string;
   municipalityName?: string;
+  className?: string;
 }
 
 const ADMIN_NAV = [
@@ -56,17 +57,20 @@ const C = {
 };
 
 export function Sidebar({
-  role, userName, userEmail, userAvatarUrl, municipalityId, municipalityName,
+  role, userName, userEmail, userAvatarUrl, municipalityId, municipalityName, className,
 }: SidebarProps) {
   const pathname = usePathname();
+  const { data: session } = useSession();
   const isActive = (href: string, exact = false) =>
     exact ? pathname === href : pathname.startsWith(href);
 
   const isPerfilActive = pathname === "/perfil";
+  const homeHref = role === "admin" ? "/admin" : "/municipio";
+  const displayedAvatarUrl = session?.user?.avatarUrl ?? userAvatarUrl ?? null;
 
   return (
     <aside
-      className="fixed inset-y-0 left-0 z-40 w-64 flex flex-col"
+      className={cn("fixed inset-y-0 left-0 z-40 w-64 flex flex-col", className)}
       style={{ background: C.bg, borderRight: `1px solid ${C.border}` }}
     >
       {/* Logo */}
@@ -74,16 +78,27 @@ export function Sidebar({
         className="h-16 px-5 flex items-center gap-3 shrink-0"
         style={{ borderBottom: `1px solid ${C.border}` }}
       >
-        <div
-          className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
-          style={{ background: "linear-gradient(135deg, #059669 0%, #10b981 100%)" }}
+        <Link
+          href={homeHref}
+          title="Ir para o painel inicial"
+          className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-opacity hover:opacity-80"
         >
-          <Leaf className="w-4 h-4 text-white" />
-        </div>
-        <div className="min-w-0">
-          <div className="font-bold text-sm leading-none tracking-tight" style={{ color: C.textActive }}>
-            ICMS-ECO
+          <div
+            className="w-full h-full rounded-xl flex items-center justify-center"
+            style={{ background: "linear-gradient(135deg, #059669 0%, #10b981 100%)" }}
+          >
+            <Leaf className="w-4 h-4 text-white" />
           </div>
+        </Link>
+        <div className="min-w-0">
+          <Link
+            href={homeHref}
+            title="Ir para o painel inicial"
+            className="font-bold text-sm leading-none tracking-tight hover:opacity-80"
+            style={{ color: C.textActive }}
+          >
+            ICMS-ECO
+          </Link>
           <div className="text-xs mt-0.5 truncate" style={{ color: C.textMuted }}>
             {role === "admin" ? "Administrador" : municipalityName ?? "Gestão Municipal"}
           </div>
@@ -174,9 +189,9 @@ export function Sidebar({
               isPerfilActive && "ring-2 ring-green-400 ring-offset-1 ring-offset-[#1a2e23]"
             )}
           >
-            {userAvatarUrl ? (
+            {displayedAvatarUrl ? (
               <img
-                src={userAvatarUrl}
+                src={displayedAvatarUrl}
                 alt={userName}
                 className="w-full h-full object-cover"
               />

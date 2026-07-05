@@ -10,8 +10,10 @@ export const metadata = { title: "Evidências" };
 
 export default async function EvidenciasPage({
   params,
+  searchParams,
 }: {
   params: { municipioId: string };
+  searchParams?: { filter?: string; backTo?: string };
 }) {
   const session = await auth();
   if (!session?.user) redirect("/login");
@@ -56,7 +58,14 @@ export default async function EvidenciasPage({
       })
     : [];
 
-  const isAdmin = session.user.role === "admin";
+  const canReview = ["admin", "reviewer"].includes(session.user.role);
+  const canDeleteEvidence = session.user.role === "admin";
+  const initialFilter = searchParams?.filter === "pending" || searchParams?.filter === "approved" || searchParams?.filter === "rejected"
+    ? searchParams.filter
+    : "all";
+  const backTo = typeof searchParams?.backTo === "string" && searchParams.backTo.startsWith("/")
+    ? searchParams.backTo
+    : `/municipio/${municipioId}`;
 
   return (
     <div className="min-h-screen bg-[#f0faf5] p-6 md:p-10 relative">
@@ -68,11 +77,13 @@ export default async function EvidenciasPage({
 
       <div className="relative max-w-4xl mx-auto">
         {/* Voltar */}
-        <Link href={`/municipio/${municipioId}`}
-          className="inline-flex items-center gap-1.5 text-sm text-emerald-700/60 hover:text-emerald-700 mb-6 group transition-colors"
-          style={{ animation: "fadeSlideUp 0.3s ease both" }}>
-          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
-          Painel
+        <Link
+          href={backTo}
+          className="inline-flex items-center gap-1.5 text-sm text-emerald-700/60 hover:text-emerald-700 mb-6 group transition-colors duration-200"
+          style={{ animation: "fadeSlideUp 0.3s ease both" }}
+        >
+          <ArrowLeft className="w-4 h-4 transition-transform duration-200 group-hover:-translate-x-1" />
+          {backTo === "/pendencias" ? "Voltar às pendências" : "Voltar ao painel"}
         </Link>
 
         {/* Header */}
@@ -92,7 +103,9 @@ export default async function EvidenciasPage({
           <EvidenciasClient
             municipioId={municipioId}
             items={checklistItems as any}
-            isAdmin={isAdmin}
+            canReview={canReview}
+            canDeleteEvidence={canDeleteEvidence}
+            initialFilter={initialFilter}
           />
         )}
       </div>

@@ -1,6 +1,7 @@
 // src/lib/auth.ts
 import NextAuth, { DefaultSession } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import type { JWT } from "next-auth/jwt";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { logAction } from "@/lib/audit";
@@ -82,35 +83,26 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
+      const jwt = token as JWT & { id?: string; role?: Role; avatarUrl?: string | null };
       if (user) {
-        token.id        = user.id;
-        token.role      = user.role;
-        token.avatarUrl = user.avatarUrl;
+        jwt.id        = user.id;
+        jwt.role      = user.role;
+        jwt.avatarUrl = user.avatarUrl;
       }
-      return token;
+      if (trigger === "update" && session?.avatarUrl !== undefined) {
+        jwt.avatarUrl = session.avatarUrl as string | null;
+      }
+      return jwt;
     },
     async session({ session, token }) {
+      const jwt = token as JWT & { id?: string; role?: Role; avatarUrl?: string | null };
       if (session.user) {
-        session.user.id        = token.id as string;
-        session.user.role      = token.role as Role;
-        session.user.avatarUrl = token.avatarUrl as string | null;
+        session.user.id        = jwt.id as string;
+        session.user.role      = jwt.role as Role;
+        session.user.avatarUrl = jwt.avatarUrl as string | null;
       }
       return session;
-    },
-  },
-  events: {
-    async signOut({ token }) {
-      if (!token?.id) return;
-      try {
-        await logAction({
-          userId:      token.id as string,
-          action:      "USER_LOGOUT",
-          entityType:  "User",
-          entityId:    token.id as string,
-          description: "Logout realizado",
-        });
-      } catch { /* silencioso */ }
     },
   },
 });

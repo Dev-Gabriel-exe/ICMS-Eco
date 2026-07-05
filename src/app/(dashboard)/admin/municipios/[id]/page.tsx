@@ -19,7 +19,7 @@ export default async function EditMunicipioPage({ params }: { params: { id: stri
       include: { user: { select: { id: true, name: true, email: true } } },
     }),
     db.user.findMany({
-      where: { role: "employee" },
+      where: { role: { in: ["employee", "reviewer"] } },
       select: { id: true, name: true, email: true },
       orderBy: { name: "asc" },
     }),
