@@ -970,19 +970,7 @@ export default function CriterionModal({
         </div>
 
         {/* Footer — Baixar relatório (visível só quando há evidências aprovadas) */}
-        {showReportButton && (
-          <div className="shrink-0 px-5 py-3 border-t border-surface-100 bg-surface-50 flex justify-end">
-            <a
-              href={`/api/relatorio/criterio/${criterion.id}?municipioId=${municipalityId}&certameId=${certameId}`}
-              download
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-700
-                         text-white text-sm font-medium transition-colors"
-            >
-              <FileText size={14} />
-              Baixar relatório (.docx)
-            </a>
-          </div>
-        )}
+
 
       </div>
     </div>
