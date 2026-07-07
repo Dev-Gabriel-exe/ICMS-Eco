@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   Camera, Loader2, CheckCircle2, AlertTriangle,
-  User, Mail, Lock, Eye, EyeOff,
+  User, Mail, Lock, Eye, EyeOff, Trash2,
 } from "lucide-react";
 import { cn, initials } from "@/lib/utils";
 
@@ -63,11 +63,12 @@ function AvatarSection({
 }: {
   name: string;
   avatarUrl: string | null | undefined;
-  onAvatarChange: (url: string) => void;
+  onAvatarChange: (url: string | null) => void;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [removing, setRemoving] = useState(false);
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   const displayUrl = preview ?? avatarUrl;
@@ -104,39 +105,82 @@ function AvatarSection({
     }
   }
 
+  async function handleRemove() {
+    if (!displayUrl) return;
+
+    setRemoving(true);
+    setFeedback(null);
+    try {
+      if (avatarUrl) {
+        const res = await fetch("/api/profile/avatar", { method: "DELETE" });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error);
+        onAvatarChange(null);
+      }
+      setPreview(null);
+      if (avatarUrl) {
+        setFeedback({ type: "success", message: "Foto removida com sucesso!" });
+      }
+    } catch (err: unknown) {
+      setFeedback({
+        type: "error",
+        message: err instanceof Error ? err.message : "Erro ao remover foto.",
+      });
+    } finally {
+      setRemoving(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  }
+
   return (
     <SectionCard title="Foto de perfil">
       <div className="flex items-center gap-6">
-        {/* Avatar clicável */}
-        <button
-          type="button"
-          onClick={() => fileRef.current?.click()}
-          disabled={uploading}
-          className="relative group shrink-0"
-          title="Alterar foto"
-        >
-          <div className="w-20 h-20 rounded-2xl overflow-hidden border-2 border-slate-200 group-hover:border-brand-400 transition-colors">
-            {displayUrl ? (
-              <img
-                src={displayUrl}
-                alt={name}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-white text-xl font-bold"
-                style={{ background: "linear-gradient(135deg, #065f46 0%, #059669 100%)" }}
-              >
-                {initials(name)}
-              </div>
-            )}
-          </div>
-          {/* Overlay */}
-          <div className="absolute inset-0 rounded-2xl bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-            {uploading
-              ? <Loader2 size={18} className="text-white animate-spin" />
-              : <Camera size={18} className="text-white" />}
-          </div>
-        </button>
+        <div className="flex flex-col items-center gap-2 shrink-0">
+          {/* Avatar clicável */}
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            disabled={uploading || removing}
+            className="relative group"
+            title="Alterar foto"
+          >
+            <div className="w-20 h-20 rounded-2xl overflow-hidden border-2 border-slate-200 group-hover:border-brand-400 transition-colors">
+              {displayUrl ? (
+                <img
+                  src={displayUrl}
+                  alt={name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-white text-xl font-bold"
+                  style={{ background: "linear-gradient(135deg, #065f46 0%, #059669 100%)" }}
+                >
+                  {initials(name)}
+                </div>
+              )}
+            </div>
+            {/* Overlay */}
+            <div className="absolute inset-0 rounded-2xl bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              {uploading
+                ? <Loader2 size={18} className="text-white animate-spin" />
+                : <Camera size={18} className="text-white" />}
+            </div>
+          </button>
+
+          {displayUrl && (
+            <button
+              type="button"
+              onClick={handleRemove}
+              disabled={uploading || removing}
+              className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-red-600 transition-colors disabled:opacity-50"
+            >
+              {removing
+                ? <Loader2 size={12} className="animate-spin" />
+                : <Trash2 size={12} />}
+              Remover
+            </button>
+          )}
+        </div>
 
         <input
           ref={fileRef}
@@ -402,7 +446,7 @@ export default function PerfilPage() {
     session?.user?.avatarUrl ?? null
   );
 
-  async function handleAvatarChange(url: string) {
+  async function handleAvatarChange(url: string | null) {
     setAvatarUrl(url);
     // Atualiza a sessão NextAuth para refletir imediatamente no sidebar
     await update({ avatarUrl: url });

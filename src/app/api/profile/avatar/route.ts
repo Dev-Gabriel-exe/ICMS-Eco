@@ -1,7 +1,7 @@
 // src/app/api/profile/avatar/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { r2Client } from "@/lib/r2";
+import { r2Client, deleteFile } from "@/lib/r2";
 import { db } from "@/lib/db";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 
@@ -59,6 +59,44 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ success: true, avatarUrl });
+  } catch (err) {
+    console.error("[avatar]", err);
+    return NextResponse.json({ success: false, error: "Erro interno" }, { status: 500 });
+  }
+}
+
+export async function DELETE() {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ success: false, error: "Não autorizado" }, { status: 401 });
+    }
+
+    const user = await db.user.findUnique({
+      where: { id: session.user.id },
+      select: { avatarUrl: true },
+    });
+
+    if (!user?.avatarUrl) {
+      return NextResponse.json({ success: true, avatarUrl: null });
+    }
+
+    const publicUrl = process.env.CLOUDFLARE_R2_PUBLIC_URL!;
+    if (user.avatarUrl.startsWith(publicUrl)) {
+      const fileKey = user.avatarUrl.slice(publicUrl.length + 1);
+      try {
+        await deleteFile(fileKey);
+      } catch (e) {
+        console.error("[avatar] falha ao remover do R2", e);
+      }
+    }
+
+    await db.user.update({
+      where: { id: session.user.id },
+      data: { avatarUrl: null },
+    });
+
+    return NextResponse.json({ success: true, avatarUrl: null });
   } catch (err) {
     console.error("[avatar]", err);
     return NextResponse.json({ success: false, error: "Erro interno" }, { status: 500 });
