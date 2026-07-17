@@ -30,6 +30,8 @@ export async function POST(req: NextRequest) {
 
   // ✅ FIX: lê subDocId do FormData (enviado pelo SubDocCard)
   const subDocId        = formData.get("subDocId")        as string | null;
+  const kindRaw         = formData.get("kind")            as string | null;
+  const evidenceKind    = kindRaw === "evidence" ? "evidence" : "document";
 
   if (!file || !municipalityId || !criteriaId || !checklistItemId) {
     return NextResponse.json(
@@ -75,7 +77,8 @@ export async function POST(req: NextRequest) {
   const evidence = await db.evidence.create({
     data: {
       checklistItemId,
-      subDocId: subDocId || null,   // ← vincula ao sub-documento correto
+      subDocId: evidenceKind === "document" ? (subDocId || null) : null,
+      kind:          evidenceKind,
       fileName:      file.name,
       fileUrl,
       fileKey,

@@ -37,6 +37,12 @@ enum ValidationStatus {
   rejected
 }
 
+/// document = comprova pontuação (aba Documentos); evidence = complementar (aba Evidências)
+enum EvidenceKind {
+  document
+  evidence
+}
+
 enum NotifType {
   EVIDENCE_RETURNED
   EVIDENCE_UPLOADED
@@ -279,6 +285,8 @@ model Evidence {
   checklistItemId String   @map("checklist_item_id")
   /// Sub-documento ao qual esta evidência pertence (null = genérico)
   subDocId        String?  @map("sub_doc_id")
+  /// document = aba Documentos (pontua); evidence = aba Evidências (não pontua)
+  kind            EvidenceKind @default(document)
   fileName        String   @map("file_name")
   fileUrl         String   @map("file_url")
   fileKey         String   @map("file_key")

@@ -85,6 +85,7 @@ export async function POST(req: NextRequest) {
   const {
     checklistItemId,
     subDocId,        // ← ADICIONADO
+    kind,            // document (pontua) | evidence (não pontua)
     fileName,
     fileKey,
     fileSizeBytes,
@@ -97,6 +98,8 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     );
   }
+
+  const evidenceKind = kind === "evidence" ? "evidence" : "document";
 
   let fileUrl: string;
   try {
@@ -114,7 +117,8 @@ export async function POST(req: NextRequest) {
   const evidence = await db.evidence.create({
     data: {
       checklistItemId,
-      subDocId:      subDocId ?? null, // ← ADICIONADO
+      subDocId:      evidenceKind === "document" ? (subDocId ?? null) : null,
+      kind:          evidenceKind,
       fileName,
       fileUrl,
       fileKey,

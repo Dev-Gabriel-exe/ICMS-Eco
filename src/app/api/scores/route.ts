@@ -4,6 +4,7 @@ import type { ChecklistItem, Criteria } from "@/types";
 import { auth } from "@/lib/auth";
 import { calculateMunicipalityScore } from "@/lib/scoring";
 import { db } from "@/lib/db";
+import { sortByCriteriaId } from "@/lib/utils";
 
 // ─── GET /api/scores?municipalityId=&certameId= ────────────────────────────
 
@@ -19,9 +20,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ success: false, error: "Parâmetros obrigatórios" }, { status: 400 });
   }
 
-  const [municipality, criteria, items] = await Promise.all([
+  const [municipality, criteriaRaw, items] = await Promise.all([
     db.municipality.findUnique({ where: { id: municipalityId } }),
-    db.criteria.findMany({ orderBy: { id: "asc" } }),
+    db.criteria.findMany(),
     db.checklistItem.findMany({
       where: { municipalityId, certameId },
       include: { criteria: true },
@@ -29,6 +30,8 @@ export async function GET(req: NextRequest) {
   ]);
 
   if (!municipality) return NextResponse.json({ success: false, error: "Município não encontrado" }, { status: 404 });
+
+  const criteria = sortByCriteriaId(criteriaRaw);
 
   const score = calculateMunicipalityScore(
     municipalityId,

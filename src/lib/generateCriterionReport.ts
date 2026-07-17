@@ -293,8 +293,10 @@ export interface ReportInput {
 export async function generateCriterionReport({
   criterion, item, evidences, municipalityName, certameYear,
 }: ReportInput): Promise<void> {
-  const approvedEvidences = evidences.filter(e => e.validationStatus === "approved");
-  const allEvidences      = evidences; // todas, para o resumo
+  // Relatório de comprovação: só documentos que pontuam (kind=document)
+  const scoringEvidences = evidences.filter(e => (e.kind ?? "document") === "document");
+  const approvedEvidences = scoringEvidences.filter(e => e.validationStatus === "approved");
+  const allEvidences      = scoringEvidences;
 
   const now        = fmtDate(new Date());
   const itemStatus = STATUS_LABEL[item?.status ?? "not_started"];

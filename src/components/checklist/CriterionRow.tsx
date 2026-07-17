@@ -69,6 +69,7 @@ export default function CriterionRow({
 
   const evidences  = (localItem?.evidences ?? []) as Evidence[];
   const hasSubDocs = (criterion.subDocs?.length ?? 0) > 0;
+  const scoringEvidences = evidences.filter((e) => (e.kind ?? "document") === "document");
 
   const fakeItem = {
     status:          localItem?.status         ?? "not_started",
@@ -107,7 +108,7 @@ export default function CriterionRow({
         .map((sd) => ({
           id:     sd.id,
           label:  sd.label,
-          status: deriveSubDocStatus(evidences.filter((e) => e.subDocId === sd.id)),
+          status: deriveSubDocStatus(scoringEvidences.filter((e) => e.subDocId === sd.id)),
         }))
     : [];
 

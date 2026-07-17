@@ -18,6 +18,7 @@ import {
 } from "docx";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { sortByCriteriaId } from "@/lib/utils";
 import { calculateMunicipalityScore, getSeloLabel } from "@/lib/scoring";
 import { formatDate } from "@/lib/utils";
 import type { ChecklistItem, Criteria } from "@/types";
@@ -90,7 +91,7 @@ export async function GET(
 
   const municipioId = params.municipioId;
 
-  const [municipality, activeCertame, criteria] = await Promise.all([
+  const [municipality, activeCertame, criteriaRaw] = await Promise.all([
     db.municipality.findUnique({
       where: { id: municipioId },
       include: {
@@ -100,8 +101,9 @@ export async function GET(
       },
     }),
     db.certame.findFirst({ where: { isActive: true, isClosed: false }, orderBy: { year: "desc" } }),
-    db.criteria.findMany({ orderBy: { order: "asc" } }),
+    db.criteria.findMany(),
   ]);
+  const criteria = sortByCriteriaId(criteriaRaw);
 
   if (!municipality) {
     return NextResponse.json({ success: false, error: "Município não encontrado" }, { status: 404 });
@@ -123,7 +125,7 @@ export async function GET(
     where: { municipalityId: municipioId, certameId: activeCertame.id },
     include: {
       criteria: true,
-      evidences: { where: { validationStatus: "approved" }, select: { id: true } },
+      evidences: { where: { validationStatus: "approved", kind: "document" }, select: { id: true } },
     },
   });
 

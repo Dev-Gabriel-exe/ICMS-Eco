@@ -13,6 +13,7 @@ import { formatFileSize, getFileIcon } from "@/lib/utils";
 // ─── Tipos ─────────────────────────────────────────────────────────────────
 
 type ValidationStatus = "pending" | "approved" | "rejected";
+type EvidenceKind = "document" | "evidence";
 
 interface EvidenceItem {
   id: string;
@@ -25,6 +26,8 @@ interface EvidenceItem {
   reviewComment: string | null;
   validatedAt: string | null;
   subDocId: string | null;
+  /** document = aba Documentos; evidence = aba Evidências (não pontua) */
+  kind?: EvidenceKind;
   uploader:  { id: string; name: string; email: string };
   validator: { id: string; name: string } | null;
   subDoc:    { id: string; label: string; code: string } | null;
@@ -469,7 +472,13 @@ function CriterionCard({
   const Icon    = cfg.icon;
   const pending = item.evidences.filter(e => e.validationStatus === "pending").length;
 
+  const docs = item.evidences.filter(e => (e.kind ?? "document") === "document");
+  const evs  = item.evidences.filter(e => e.kind === "evidence");
+
   const [open, setOpen] = useState(pending > 0);
+  const [listKind, setListKind] = useState<EvidenceKind>("document");
+
+  const visible = listKind === "document" ? docs : evs;
 
   if (item.evidences.length === 0) return null;
 
@@ -513,15 +522,58 @@ function CriterionCard({
 
       {open && (
         <div className="border-t border-slate-100 px-4 py-3 flex flex-col gap-2 bg-slate-50/30">
-          {item.evidences.map(ev => (
-            <FileRow
-              key={ev.id}
-              ev={ev}
-              canReview={canReview}
-              canDeleteEvidence={canDeleteEvidence}
-              onReview={onReview}
-              onDelete={evId => onDelete(item.id, evId)} />
-          ))}
+          {/* Toggle Documentos | Evidências */}
+          <div className="flex justify-end pb-1">
+            <div
+              role="group"
+              aria-label="Filtrar por tipo de arquivo"
+              className="inline-flex rounded-lg border border-slate-200 bg-white p-0.5 shadow-sm"
+              onClick={e => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={() => setListKind("document")}
+                className={cn(
+                  "px-3 py-1 rounded-md text-[11px] font-semibold transition-colors",
+                  listKind === "document"
+                    ? "bg-brand-600 text-white shadow-sm"
+                    : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+                )}
+              >
+                {docs.length} documento{docs.length !== 1 ? "s" : ""}
+              </button>
+              <button
+                type="button"
+                onClick={() => setListKind("evidence")}
+                className={cn(
+                  "px-3 py-1 rounded-md text-[11px] font-semibold transition-colors",
+                  listKind === "evidence"
+                    ? "bg-brand-600 text-white shadow-sm"
+                    : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+                )}
+              >
+                {evs.length} evidência{evs.length !== 1 ? "s" : ""}
+              </button>
+            </div>
+          </div>
+
+          {visible.length === 0 ? (
+            <p className="text-xs text-slate-400 text-center py-3">
+              {listKind === "document"
+                ? "Nenhum documento neste filtro."
+                : "Nenhuma evidência neste filtro."}
+            </p>
+          ) : (
+            visible.map(ev => (
+              <FileRow
+                key={ev.id}
+                ev={ev}
+                canReview={canReview}
+                canDeleteEvidence={canDeleteEvidence}
+                onReview={onReview}
+                onDelete={evId => onDelete(item.id, evId)} />
+            ))
+          )}
         </div>
       )}
     </div>

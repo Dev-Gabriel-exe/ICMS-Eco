@@ -147,11 +147,15 @@ export interface ChecklistItem {
 /** Alinhado com o enum Prisma ValidationStatus */
 export type ValidationStatus = "pending" | "approved" | "rejected";
 
+/** document = aba Documentos (pontua); evidence = aba Evidências (não pontua) */
+export type EvidenceKind = "document" | "evidence";
+
 export interface Evidence {
   id: string;
   checklistItemId: string;
   /** ID do sub-documento ao qual esta evidência pertence (null = genérico) */
   subDocId: string | null;
+  kind: EvidenceKind;
   fileName: string;
   fileUrl: string;
   fileKey: string;

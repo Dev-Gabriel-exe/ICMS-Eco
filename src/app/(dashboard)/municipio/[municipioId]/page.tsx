@@ -4,8 +4,7 @@ import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { calculateMunicipalityScore, getSeloLabel } from "@/lib/scoring";
-import { formatPopulation } from "@/lib/utils";
-import { cn } from "@/lib/utils";
+import { cn, formatPopulation, sortByCriteriaId } from "@/lib/utils";
 import type { ChecklistItem, Criteria } from "@/types";
 import {
   AlertTriangle, CheckCircle2, Circle, ChevronRight,
@@ -45,11 +44,12 @@ export default async function MunicipioDashboardPage({
     if (!link) notFound();
   }
 
-  const [municipality, activeCertame, criteria] = await Promise.all([
+  const [municipality, activeCertame, criteriaRaw] = await Promise.all([
     db.municipality.findUnique({ where: { id: municipioId } }),
     db.certame.findFirst({ where: { isActive: true }, orderBy: { year: "desc" } }),
-    db.criteria.findMany({ orderBy: { id: "asc" } }),
+    db.criteria.findMany(),
   ]);
+  const criteria = sortByCriteriaId(criteriaRaw);
 
   if (!municipality) notFound();
 

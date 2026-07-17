@@ -162,7 +162,7 @@ export async function GET(
       municipality: true,
       certame: true,
       evidences: {
-        where: { validationStatus: "approved" },
+        where: { validationStatus: "approved", kind: "document" },
         orderBy: { uploadedAt: "asc" },
         include: {
           uploader: { select: { name: true, email: true } },

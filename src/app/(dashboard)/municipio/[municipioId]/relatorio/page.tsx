@@ -7,8 +7,7 @@ import {
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { calculateMunicipalityScore, getSeloLabel } from "@/lib/scoring";
-import { formatDate, formatPopulation } from "@/lib/utils";
-import { cn } from "@/lib/utils";
+import { cn, formatDate, formatPopulation, sortByCriteriaId } from "@/lib/utils";
 import { PrintButton } from "@/components/relatorio/PrintButton";
 import { ExportDocButton } from "@/components/relatorio/ExportDocButton";
 import type { ChecklistItem, Criteria } from "@/types";
@@ -32,11 +31,12 @@ export default async function RelatorioPage({
 
   const { municipioId } = params;
 
-  const [municipality, activeCertame, criteria] = await Promise.all([
+  const [municipality, activeCertame, criteriaRaw] = await Promise.all([
     db.municipality.findUnique({ where: { id: municipioId } }),
     db.certame.findFirst({ where: { isActive: true }, orderBy: { year: "desc" } }),
-    db.criteria.findMany({ orderBy: { id: "asc" } }),
+    db.criteria.findMany(),
   ]);
+  const criteria = sortByCriteriaId(criteriaRaw);
 
   if (!municipality) notFound();
 

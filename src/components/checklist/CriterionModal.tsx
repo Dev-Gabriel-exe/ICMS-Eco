@@ -11,7 +11,7 @@ import {
 import { calculateItemPoints } from "@/lib/scoring";
 import { formatFileSize, getFileIcon, cn } from "@/lib/utils";
 import { MAX_FILE_SIZE_BYTES } from "@/lib/r2";
-import type { ChecklistItem, Criteria, CriteriaSubDoc, Evidence, ValidationStatus } from "@/types";
+import type { ChecklistItem, Criteria, CriteriaSubDoc, Evidence, EvidenceKind, ValidationStatus } from "@/types";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -27,8 +27,12 @@ interface Props {
   onSaved: (item: ChecklistItem) => void;
 }
 
-type TabId = "pontuacao" | "documentos" | "requisito";
+type TabId = "pontuacao" | "documentos" | "evidencias" | "requisito";
 type SubDocStatus = "not_started" | "pending" | "approved" | "rejected";
+
+function isScoringDoc(e: Evidence) {
+  return (e.kind ?? "document") === "document";
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -149,6 +153,7 @@ function SubDocCard({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           checklistItemId: itemId, subDocId: subDoc.id,
+          kind: "document",
           fileName: file.name, fileKey,
           fileSizeBytes: file.size, fileType: file.type,
         }),
@@ -360,12 +365,14 @@ interface GenericUploaderProps {
   criteriaId: string;
   municipalityId: string;
   certameId: string;
+  kind?: EvidenceKind;
   onUploaded: (ev: Evidence) => void;
   onDeleted:  (evId: string) => void;
 }
 
 function GenericUploader({
-  evidences, checklistItemId, criteriaId, municipalityId, certameId, onUploaded, onDeleted,
+  evidences, checklistItemId, criteriaId, municipalityId, certameId,
+  kind = "document", onUploaded, onDeleted,
 }: GenericUploaderProps) {
   const fileRef             = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -415,6 +422,7 @@ function GenericUploader({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           checklistItemId: itemId,
+          kind,
           fileName: file.name, fileKey,
           fileSizeBytes: file.size, fileType: file.type,
         }),
@@ -560,18 +568,25 @@ export default function CriterionModal({
   const hasSubDocs = (criterion.subDocs?.length ?? 0) > 0;
   const [tab, setTab] = useState<TabId>(hasSubDocs ? "documentos" : "pontuacao");
 
+  const scoringEvidences = evidences.filter(isScoringDoc);
+  const supportingEvidences = evidences.filter(e => e.kind === "evidence");
+
   const pendingDocsCount = hasSubDocs
     ? (criterion.subDocs ?? []).filter(sd => {
-        const st = deriveSubDocStatus(evidences.filter(e => e.subDocId === sd.id));
+        const st = deriveSubDocStatus(scoringEvidences.filter(e => e.subDocId === sd.id));
         return st === "not_started" || st === "rejected";
       }).length
     : 0;
 
+  const pendingSupportingCount = supportingEvidences.filter(
+    e => e.validationStatus === "pending" || e.validationStatus === "rejected"
+  ).length;
+
   const fakeItem = { status, quantity, percentageValue: pct, faixaLevel } as unknown as ChecklistItem;
   const points   = calculateItemPoints(fakeItem, criterion, population);
 
-  // Decide se mostra o botão de relatório
-  const hasApprovedEvidences = evidences.some(e => e.validationStatus === "approved");
+  // Decide se mostra o botão de relatório (só docs que pontuam)
+  const hasApprovedEvidences = scoringEvidences.some(e => e.validationStatus === "approved");
   const showReportButton     = !!item?.id && status !== "not_started" && hasApprovedEvidences;
 
   // Fetch evidências
@@ -630,6 +645,7 @@ export default function CriterionModal({
   const tabs: { id: TabId; label: string; badge?: number }[] = [
     { id: "pontuacao",  label: "Pontuação" },
     { id: "documentos", label: "Documentos", badge: pendingDocsCount > 0 ? pendingDocsCount : undefined },
+    { id: "evidencias", label: "Evidências", badge: pendingSupportingCount > 0 ? pendingSupportingCount : undefined },
     { id: "requisito",  label: "Requisito" },
   ];
 
@@ -843,10 +859,10 @@ export default function CriterionModal({
                   {(() => {
                     const total    = criterion.subDocs!.length;
                     const approved = criterion.subDocs!.filter(sd =>
-                      deriveSubDocStatus(evidences.filter(e => e.subDocId === sd.id)) === "approved"
+                      deriveSubDocStatus(scoringEvidences.filter(e => e.subDocId === sd.id)) === "approved"
                     ).length;
                     const sent = criterion.subDocs!.filter(sd =>
-                      deriveSubDocStatus(evidences.filter(e => e.subDocId === sd.id)) !== "not_started"
+                      deriveSubDocStatus(scoringEvidences.filter(e => e.subDocId === sd.id)) !== "not_started"
                     ).length;
                     const pctSent = Math.round((sent / total) * 100);
                     return (
@@ -878,7 +894,7 @@ export default function CriterionModal({
                     <SubDocCard
                       key={sd.id}
                       subDoc={sd}
-                      evidences={evidences.filter(e => e.subDocId === sd.id)}
+                      evidences={scoringEvidences.filter(e => e.subDocId === sd.id)}
                       checklistItemId={item?.id}
                       criteriaId={criterion.id}
                       municipalityId={municipalityId}
@@ -894,15 +910,46 @@ export default function CriterionModal({
                     <Info size={13} className="text-amber-500 shrink-0" />
                     <span>
                       Este critério ainda não tem documentos específicos cadastrados.
-                      Envie os arquivos manualmente conforme a aba "Requisito".
+                      Envie os arquivos manualmente conforme a aba &quot;Requisito&quot;.
                     </span>
                   </div>
                   <GenericUploader
-                    evidences={evidences}
+                    evidences={scoringEvidences.filter(e => !e.subDocId)}
                     checklistItemId={item?.id}
                     criteriaId={criterion.id}
                     municipalityId={municipalityId}
                     certameId={certameId}
+                    kind="document"
+                    onUploaded={handleUploaded}
+                    onDeleted={handleDeleted}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB: EVIDÊNCIAS (não pontuam) */}
+          {tab === "evidencias" && (
+            <div className="px-5 py-4">
+              {loadingEvs ? (
+                <div className="flex items-center justify-center py-8 gap-2 text-surface-400">
+                  <Loader2 size={16} className="animate-spin" />
+                  <span className="text-sm">Carregando arquivos…</span>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-4">
+                  {supportingEvidences.length === 0 && (
+                    <p className="text-sm text-surface-500 text-center py-2">
+                      Nenhum arquivo encontrado. Utilize o botão abaixo para enviar as evidências.
+                    </p>
+                  )}
+                  <GenericUploader
+                    evidences={supportingEvidences}
+                    checklistItemId={item?.id}
+                    criteriaId={criterion.id}
+                    municipalityId={municipalityId}
+                    certameId={certameId}
+                    kind="evidence"
                     onUploaded={handleUploaded}
                     onDeleted={handleDeleted}
                   />

@@ -7,7 +7,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { AXIS_NAMES } from "@/lib/constants";
 import { calculateAxisScore } from "@/lib/scoring";
-import { cn } from "@/lib/utils";
+import { cn, sortByCriteriaId } from "@/lib/utils";
 import type { Axis, ChecklistItem, Criteria } from "@/types";
 
 export async function generateMetadata({ params }: { params: { municipioId: string; eixo: string } }) {
@@ -28,15 +28,15 @@ export default async function ChecklistEixoPage({
   const validAxes = ["A", "B", "C", "D", "E", "F", "G", "H", "I"];
   if (!validAxes.includes(axis)) notFound();
 
-  const [municipality, activeCertame, axisCriteria] = await Promise.all([
+  const [municipality, activeCertame, axisCriteriaRaw] = await Promise.all([
     db.municipality.findUnique({ where: { id: municipioId } }),
     db.certame.findFirst({ where: { isActive: true }, orderBy: { year: "desc" } }),
     db.criteria.findMany({
-  where: { axis },
-  orderBy: { id: "asc" },
-  include: { subDocs: { orderBy: { order: "asc" } } }, // ← adicione isso
-})
+      where: { axis },
+      include: { subDocs: { orderBy: { order: "asc" } } },
+    }),
   ]);
+  const axisCriteria = sortByCriteriaId(axisCriteriaRaw);
 
   if (!municipality) notFound();
 

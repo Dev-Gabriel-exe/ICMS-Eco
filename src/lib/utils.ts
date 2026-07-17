@@ -58,3 +58,23 @@ export function isValidEmail(email: string | null | undefined) {
   if (!email) return false;
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
+
+/** Compara ids de critério (ex.: B.2 < B.10) — ordem natural, não lexicográfica. */
+export function compareCriteriaId(a: string, b: string): number {
+  const parse = (id: string) => {
+    const dot = id.indexOf(".");
+    if (dot === -1) return { axis: id, num: 0 };
+    return {
+      axis: id.slice(0, dot),
+      num: Number(id.slice(dot + 1)) || 0,
+    };
+  };
+  const pa = parse(a);
+  const pb = parse(b);
+  if (pa.axis !== pb.axis) return pa.axis.localeCompare(pb.axis);
+  return pa.num - pb.num;
+}
+
+export function sortByCriteriaId<T extends { id: string }>(items: T[]): T[] {
+  return [...items].sort((a, b) => compareCriteriaId(a.id, b.id));
+}
