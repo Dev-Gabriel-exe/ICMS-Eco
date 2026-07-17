@@ -215,7 +215,12 @@ export function Sidebar({
           </div>
 
           <button
-            onClick={() => signOut({ callbackUrl: "/login" })}
+            onClick={() => {
+              // redirect pelo origin atual — não usa NEXTAUTH_URL (evita placeholder na Vercel)
+              void signOut({ redirect: false }).then(() => {
+                window.location.assign("/login");
+              });
+            }}
             title="Sair"
             className="p-1.5 rounded-lg transition-colors duration-150"
             style={{ color: C.textMuted }}

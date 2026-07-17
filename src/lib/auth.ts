@@ -31,6 +31,8 @@ declare module "next-auth/jwt" {
   }
 }
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  // Na Vercel o host muda (prod/preview); não depender de NEXTAUTH_URL hardcoded
+  trustHost: true,
   session: {
     strategy: "jwt",
     maxAge: 8 * 60 * 60,

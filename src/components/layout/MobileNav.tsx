@@ -228,7 +228,11 @@ export function MobileNav({
               <div className="text-surface-500 text-xs truncate">{userEmail}</div>
             </div>
             <button
-              onClick={() => signOut({ callbackUrl: "/login" })}
+              onClick={() => {
+                void signOut({ redirect: false }).then(() => {
+                  window.location.assign("/login");
+                });
+              }}
               title="Sair"
               className="p-1.5 rounded-md text-surface-500 hover:text-red-400 hover:bg-surface-800 transition-colors"
             >
