@@ -41,16 +41,14 @@ export const AXES: Axis[] = ["A", "B", "C", "D", "E", "F", "G", "H", "I"];
 // ─────────────────────────────────────────────
 
 /**
- * Calcula pontos de um ChecklistItem conforme o tipo de pontuação do critério.
- * Retorna 0 se o item não estiver completo.
+ * Calcula pontos brutos conforme o tipo de pontuação do critério,
+ * sem considerar o status do item (útil para preview no formulário).
  */
-export function calculateItemPoints(
-  item: ChecklistItem,
+export function computeScoringPoints(
+  item: Pick<ChecklistItem, "quantity" | "percentageValue" | "faixaLevel">,
   criteria: Criteria,
   municipalityPopulation?: number
 ): number {
-  if (item.status !== "complete") return 0;
-
   const cfg = criteria.scoringConfig as ScoringConfig;
 
   switch (criteria.scoringType) {
@@ -59,12 +57,14 @@ export function calculateItemPoints(
       return criteria.maxPoints;
     }
 
-    // ── Por unidade: qtd × valor_unitário ──────
+    // ── Por unidade: floor(qtd / unitSize) × unitValue, teto maxPoints ──
     case "per_unit": {
       if (!cfg || !("unitValue" in cfg)) return 0;
       const config = cfg as PerUnitConfig;
-      const qty = item.quantity ?? 1;
-      return Math.min(qty * config.unitValue, config.maxPoints);
+      const unitSize = config.unitSize && config.unitSize > 0 ? config.unitSize : 1;
+      const qty = item.quantity ?? 0;
+      const completeUnits = Math.floor(qty / unitSize);
+      return Math.min(completeUnits * config.unitValue, config.maxPoints);
     }
 
     // ── Percentagem: valor × coeficiente ───────
@@ -80,11 +80,21 @@ export function calculateItemPoints(
       if (!cfg) return 0;
 
       if ("type" in cfg && cfg.type === "population") {
-        return calculateC5Points(cfg as PerFaixaConfigC5, municipalityPopulation ?? 0, item.faixaLevel ?? 0);
+        const config = cfg as PerFaixaConfigC5;
+        const pop = municipalityPopulation ?? 0;
+        // Preferência: quantidade de mudas → deriva o nível. Fallback: faixaLevel manual.
+        const level =
+          item.quantity != null
+            ? resolveC5LevelFromQuantity(config, pop, item.quantity)
+            : (item.faixaLevel ?? 0);
+        return calculateC5Points(config, pop, level);
       }
 
       if ("type" in cfg && cfg.type === "territory") {
-        return calculateTerritoryPoints(cfg as PerFaixaConfigTerritory, Number(item.percentageValue ?? 0));
+        if (item.percentageValue == null || item.percentageValue === "") return 0;
+        const pct = Number(item.percentageValue);
+        if (!Number.isFinite(pct)) return 0;
+        return calculateTerritoryPoints(cfg as PerFaixaConfigTerritory, pct);
       }
 
       return 0;
@@ -93,6 +103,19 @@ export function calculateItemPoints(
     default:
       return 0;
   }
+}
+
+/**
+ * Calcula pontos oficiais de um ChecklistItem.
+ * Retorna 0 se o item não estiver completo.
+ */
+export function calculateItemPoints(
+  item: ChecklistItem,
+  criteria: Criteria,
+  municipalityPopulation?: number
+): number {
+  if (item.status !== "complete") return 0;
+  return computeScoringPoints(item, criteria, municipalityPopulation);
 }
 
 // ─────────────────────────────────────────────
@@ -104,12 +127,7 @@ export function calculateC5Points(
   population: number,
   level: number // 1, 2 ou 3
 ): number {
-  const faixa = config.faixas.find(
-    (f) =>
-      population >= f.minPop &&
-      (f.maxPop === null || population <= f.maxPop)
-  );
-
+  const faixa = getC5Faixa(config, population);
   if (!faixa) return 0;
 
   const lvl = faixa.levels.find((l) => l.level === level);
@@ -125,16 +143,54 @@ export function getC5Faixa(config: PerFaixaConfigC5, population: number): FaixaC
   );
 }
 
+/**
+ * Maior nível atingido na faixa do município com base na qtd. de mudas.
+ * Retorna 0 se não atingir o Nível 1.
+ */
+export function resolveC5LevelFromQuantity(
+  config: PerFaixaConfigC5,
+  population: number,
+  mudas: number
+): number {
+  const faixa = getC5Faixa(config, population);
+  if (!faixa || mudas <= 0) return 0;
+
+  let best = 0;
+  for (const lvl of faixa.levels) {
+    if (mudas >= lvl.minQty && lvl.level > best) best = lvl.level;
+  }
+  return best;
+}
+
+/** Rótulo legível da faixa populacional (ex.: "5.001 a 10.000 habitantes") */
+export function formatC5FaixaLabel(faixa: FaixaC5): string {
+  const fmt = (n: number) => n.toLocaleString("pt-BR");
+  if (faixa.maxPop === null) {
+    return `mais de ${fmt(faixa.minPop - 1)} habitantes`;
+  }
+  if (faixa.minPop <= 0) {
+    return `até ${fmt(faixa.maxPop)} habitantes`;
+  }
+  return `${fmt(faixa.minPop)} a ${fmt(faixa.maxPop)} habitantes`;
+}
+
 // ─────────────────────────────────────────────
 // 1b. H.1 e H.3 — Por % do território
 // ─────────────────────────────────────────────
 
+/**
+ * Pontuação por % do território (H.1 / H.3).
+ * Faixas do edital: "até X%" inclui o limite superior; "acima de X%" é exclusivo.
+ * 0% ou valor inválido → 0 pts (campo vazio não pontua).
+ */
 export function calculateTerritoryPoints(
   config: PerFaixaConfigTerritory,
   pct: number
 ): number {
+  if (!Number.isFinite(pct) || pct <= 0) return 0;
+
   const range = config.ranges.find(
-    (r) => pct >= r.minPct && (r.maxPct === null || pct <= r.maxPct)
+    (r) => pct > r.minPct && (r.maxPct === null || pct <= r.maxPct)
   );
   return range?.points ?? 0;
 }
@@ -143,11 +199,24 @@ export function getTerritoryRange(
   config: PerFaixaConfigTerritory,
   pct: number
 ): TerritoryRange | null {
+  if (!Number.isFinite(pct) || pct <= 0) return null;
+
   return (
     config.ranges.find(
-      (r) => pct >= r.minPct && (r.maxPct === null || pct <= r.maxPct)
+      (r) => pct > r.minPct && (r.maxPct === null || pct <= r.maxPct)
     ) ?? null
   );
+}
+
+/** Rótulo legível de uma faixa territorial (ex.: "acima de 25% até 50%") */
+export function formatTerritoryRangeLabel(range: TerritoryRange): string {
+  if (range.maxPct === null) {
+    return `acima de ${range.minPct}% do território`;
+  }
+  if (range.minPct <= 0) {
+    return `até ${range.maxPct}% do território`;
+  }
+  return `acima de ${range.minPct}% até ${range.maxPct}%`;
 }
 
 // ─────────────────────────────────────────────

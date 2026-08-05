@@ -701,7 +701,8 @@ const subDocs: SubDocInput[] = [
     criteriaId: "E.2",
     code: "projeto_nascentes",
     label: "Projeto Técnico de proteção de nascentes (com ART)",
-    description: "Projeto com diagnóstico da área (coordenadas, extensão, condições do solo/água/vegetação), metodologia (cercamento, nucleação ou plantio), espécies nativas (mín. 2), quantitativo e cronograma. Taxa de sobrevivência ≥50% após 45 dias.",
+    description:
+      "Projeto com diagnóstico da área (coordenadas, extensão, condições do solo, da água e da vegetação), metodologia empregada (cercamento, nucleação ou plantio), espécies nativas representativas do bioma (mín. 2), quantitativo e cronograma. Se plantio: taxa mínima de sobrevivência das mudas ≥50% após 45 dias, conforme TR da SEMARH ou metodologia equivalente.",
     acceptsMultiple: true,
     order: 1,
   },
@@ -709,9 +710,28 @@ const subDocs: SubDocInput[] = [
     criteriaId: "E.2",
     code: "relatorio_nascentes",
     label: "Relatório Operacional de proteção de nascentes (com ART)",
-    description: "Localização, mapas, coordenadas, diagnóstico, metodologia e ações executadas, quantitativo de mudas, fotos georreferenciadas antes e depois, NF de insumos, mapa georreferenciado das áreas e quadro resumo.",
+    description:
+      "Localização das áreas, mapas e coordenadas; diagnóstico; metodologia e ações executadas (cercamento, plantio ou nucleação); quantitativo de mudas plantadas e diversidade mínima; fotos georreferenciadas com antes e depois para demonstração de resultados, especialmente no plantio direto. Com ART ou equivalente.",
     acceptsMultiple: true,
     order: 2,
+  },
+  {
+    criteriaId: "E.2",
+    code: "insumos_nascentes",
+    label: "Comprovação documental de insumos",
+    description:
+      "Notas fiscais de mudas, cercas e demais materiais empregados na proteção das nascentes.",
+    acceptsMultiple: true,
+    order: 3,
+  },
+  {
+    criteriaId: "E.2",
+    code: "mapas_nascentes",
+    label: "Mapas georreferenciados e quadro resumo",
+    description:
+      "Mapas georreferenciados das áreas protegidas e quadro resumo de espécies plantadas, áreas recuperadas e extensão de cercamentos.",
+    acceptsMultiple: true,
+    order: 4,
   },
 
   // ── E.3 ──────────────────────────────────────────────────────────────────
@@ -729,7 +749,8 @@ const subDocs: SubDocInput[] = [
     criteriaId: "E.4",
     code: "projeto_aguas_superficiais",
     label: "Projeto Técnico de proteção de águas superficiais (com ART)",
-    description: "Projeto com diagnóstico da área, metodologia (cercamento, plantio, nucleação, limpeza, desassoreamento, controle de erosão) e espécies nativas. Taxa de sobrevivência ≥50% após 45 dias.",
+    description:
+      "Projeto com diagnóstico da área (coordenadas, extensão, condições do solo, da água e da vegetação), metodologia (cercamento, plantio, nucleação, limpeza, desassoreamento, controle da erosão, plantio direto). Se plantio: espécies nativas do bioma, quantitativo, cronograma e taxa mínima de sobrevivência das mudas ≥50% após 45 dias, conforme TR da SEMARH ou metodologia equivalente.",
     acceptsMultiple: true,
     order: 1,
   },
@@ -737,9 +758,28 @@ const subDocs: SubDocInput[] = [
     criteriaId: "E.4",
     code: "relatorio_aguas_superficiais",
     label: "Relatório Operacional de proteção de águas superficiais (com ART)",
-    description: "Localização, diagnóstico, mapas, coordenadas, extensão, ações executadas com metodologia analítica, quantitativo de mudas, fotos antes/durante/depois, NF de insumos, mapa georreferenciado e quadro resumo.",
+    description:
+      "Localização e diagnóstico das áreas com mapas, coordenadas e extensão; ações executadas com metodologia completa e analítica (cercamento, plantio, nucleação, limpeza, desassoreamento, controle da erosão); quantitativo de mudas e diversidade mínima conforme o projeto; fotos georreferenciadas antes, durante e depois, com comprovação analítica dos resultados. Com ART ou equivalente.",
     acceptsMultiple: true,
     order: 2,
+  },
+  {
+    criteriaId: "E.4",
+    code: "insumos_aguas_superficiais",
+    label: "Comprovação documental de insumos e mudas",
+    description:
+      "Notas fiscais de mudas, cercas e demais materiais empregados na proteção/manutenção de águas superficiais.",
+    acceptsMultiple: true,
+    order: 3,
+  },
+  {
+    criteriaId: "E.4",
+    code: "mapas_aguas_superficiais",
+    label: "Mapas georreferenciados e quadro resumo",
+    description:
+      "Mapas georreferenciados das áreas protegidas e quadro resumo de espécies plantadas, áreas recuperadas e extensão de cercamentos.",
+    acceptsMultiple: true,
+    order: 4,
   },
 
   // ── E.5 ──────────────────────────────────────────────────────────────────
@@ -747,7 +787,8 @@ const subDocs: SubDocInput[] = [
     criteriaId: "E.5",
     code: "relatorio_monitoramento_agua",
     label: "Relatório Técnico de Monitoramento da qualidade da água",
-    description: "Relatório assinado por responsável habilitado com laudos laboratoriais (físico-química e bacteriológica) dos poços municipais, cobrindo mín. 2 trimestres distintos do ano de apuração, e identificação georreferenciada dos pontos de coleta.",
+    description:
+      "Relatório assinado por responsável habilitado, com consolidação dos laudos laboratoriais (físico-química e bacteriológica) das fontes de captação municipais, em conformidade com a Portaria GM/MS nº 888/2021 (ou norma superveniente), cobrindo no mínimo 2 trimestres distintos do ano de apuração, e identificação georreferenciada dos pontos de coleta.",
     acceptsMultiple: true,
     order: 1,
   },

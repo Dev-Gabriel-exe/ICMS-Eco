@@ -27,8 +27,20 @@ export interface FixedConfig      { type: "fixed" }
 
 export interface PerUnitConfig {
   type: "per_unit";
+  /** Pontos concedidos por cada unidade completa */
   unitValue: number;
+  /**
+   * Tamanho de uma unidade na medida informada pelo município.
+   * Ex.: 12 = "a cada 12 horas". Default 1 (quantity já é contagem de unidades).
+   */
+  unitSize?: number;
   maxPoints: number;
+  /** Medida informada no formulário: "hora", "ação", "evento", "PEV"... */
+  measureLabel?: string;
+  /** Placeholder do input (ex.: "Horas") */
+  inputPlaceholder?: string;
+  /** Texto auxiliar na UI (ex.: limite de 3h por servidor) */
+  inputHint?: string;
 }
 
 export interface PercentageConfig {

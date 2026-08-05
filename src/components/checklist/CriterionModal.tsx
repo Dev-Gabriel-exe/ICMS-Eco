@@ -8,10 +8,10 @@ import {
   CheckCircle2, XCircle, Clock, Circle, AlertTriangle,
   Eye, Download, Trash2, RefreshCw, ChevronRight,
 } from "lucide-react";
-import { calculateItemPoints } from "@/lib/scoring";
+import { calculateItemPoints, computeScoringPoints, formatC5FaixaLabel, formatTerritoryRangeLabel, getC5Faixa, getTerritoryRange, resolveC5LevelFromQuantity } from "@/lib/scoring";
 import { formatFileSize, getFileIcon, cn } from "@/lib/utils";
 import { MAX_FILE_SIZE_BYTES } from "@/lib/r2";
-import type { ChecklistItem, Criteria, CriteriaSubDoc, Evidence, EvidenceKind, ValidationStatus } from "@/types";
+import type { ChecklistItem, Criteria, CriteriaSubDoc, Evidence, EvidenceKind, PerFaixaConfigC5, PerFaixaConfigTerritory, PerUnitConfig, ValidationStatus } from "@/types";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -32,6 +32,32 @@ type SubDocStatus = "not_started" | "pending" | "approved" | "rejected";
 
 function isScoringDoc(e: Evidence) {
   return (e.kind ?? "document") === "document";
+}
+
+/** Placeholders padrão por measureLabel (ex.: "Horas", "Publicações") */
+const MEASURE_PLACEHOLDERS: Record<string, string> = {
+  hora: "Horas",
+  publicação: "Publicações",
+  projeto: "Projetos",
+  evento: "Eventos",
+  ação: "Ações",
+  PEV: "PEVs",
+  área: "Áreas",
+  poço: "Poços",
+  fonte: "Fontes",
+  material: "Materiais",
+};
+
+function capitalize(s: string) {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+/** Máximo aceito no campo de base de cálculo (per_unit). */
+function getPerUnitMaxAllowed(cfg: PerUnitConfig): number {
+  const unitSize = cfg.unitSize && cfg.unitSize > 0 ? cfg.unitSize : 1;
+  const maxUnits = Math.floor(cfg.maxPoints / cfg.unitValue);
+  const isHours = cfg.measureLabel === "hora";
+  return isHours ? maxUnits * unitSize : maxUnits;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -583,7 +609,23 @@ export default function CriterionModal({
   ).length;
 
   const fakeItem = { status, quantity, percentageValue: pct, faixaLevel } as unknown as ChecklistItem;
-  const points   = calculateItemPoints(fakeItem, criterion, population);
+  // fixed: só pontua com status Completo (preview). Demais tipos: preview independente do status.
+  // Persistência oficial (pointsClaimed) só no save via API.
+  const points =
+    criterion.scoringType === "fixed"
+      ? calculateItemPoints(fakeItem, criterion, population)
+      : computeScoringPoints(fakeItem, criterion, population);
+
+  const perUnitCfg =
+    criterion.scoringType === "per_unit" &&
+    criterion.scoringConfig &&
+    "unitValue" in criterion.scoringConfig
+      ? (criterion.scoringConfig as PerUnitConfig)
+      : null;
+  const perUnitOverMax =
+    perUnitCfg != null &&
+    quantity != null &&
+    quantity > getPerUnitMaxAllowed(perUnitCfg);
 
   // Decide se mostra o botão de relatório (só docs que pontuam)
   const hasApprovedEvidences = scoringEvidences.some(e => e.validationStatus === "approved");
@@ -616,13 +658,35 @@ export default function CriterionModal({
 
   // Salvar scoring
   async function handleSave() {
+    if (perUnitOverMax) return;
+
     setSaving(true);
+
+    // C.5: deriva nível a partir das mudas informadas
+    let levelToSave = faixaLevel;
+    if (
+      criterion.scoringType === "per_faixa" &&
+      criterion.scoringConfig &&
+      "type" in criterion.scoringConfig &&
+      (criterion.scoringConfig as { type: string }).type === "population"
+    ) {
+      levelToSave =
+        quantity != null
+          ? resolveC5LevelFromQuantity(
+              criterion.scoringConfig as PerFaixaConfigC5,
+              population,
+              quantity
+            )
+          : null;
+      setFaixa(levelToSave);
+    }
+
     const res  = await fetch("/api/checklist", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         municipalityId, certameId, criteriaId: criterion.id,
-        status, quantity, percentageValue: pct, faixaLevel,
+        status, quantity, percentageValue: pct, faixaLevel: levelToSave,
         mapLink: mapLink || null, notes: notes || null,
       }),
     });
@@ -731,29 +795,75 @@ export default function CriterionModal({
                 </select>
               </div>
 
-              {criterion.scoringType === "per_unit" && (
-                <div>
-                  <label className="label">Quantidade</label>
-                  <input
-                    type="number" min={0} className="input"
-                    placeholder="Número de unidades"
-                    value={quantity ?? ""}
-                    onChange={e => setQuantity(e.target.value ? Number(e.target.value) : null)}
-                  />
-                  {criterion.scoringConfig && "unitValue" in criterion.scoringConfig && (
-                    <p className="text-xs text-surface-400 mt-1">
-                      {(criterion.scoringConfig as { unitValue: number }).unitValue} pts/unidade · máx {criterion.maxPoints} pts
-                    </p>
-                  )}
-                </div>
-              )}
+              {criterion.scoringType === "per_unit" && (() => {
+                const cfg = criterion.scoringConfig as PerUnitConfig | null;
+                if (!cfg || !("unitValue" in cfg)) return null;
+                const unitSize = cfg.unitSize && cfg.unitSize > 0 ? cfg.unitSize : 1;
+                const measure = cfg.measureLabel ?? "unidade";
+                const isHours = measure === "hora";
+                const unitPhrase = isHours
+                  ? `${unitSize}h`
+                  : unitSize === 1
+                    ? measure
+                    : `${unitSize} ${measure}`;
+
+                const placeholder =
+                  cfg.inputPlaceholder ??
+                  (isHours
+                    ? "Horas"
+                    : MEASURE_PLACEHOLDERS[measure] ?? capitalize(measure));
+
+                const maxAllowed = getPerUnitMaxAllowed(cfg);
+                const maxUnitsHint = isHours
+                  ? `até ${maxAllowed}h`
+                  : `até ${maxAllowed} ${(MEASURE_PLACEHOLDERS[measure] ?? measure).toLowerCase()}`;
+                const maxLabel = isHours
+                  ? "horas"
+                  : (MEASURE_PLACEHOLDERS[measure] ?? measure).toLowerCase();
+                const overMax = quantity != null && quantity > maxAllowed;
+
+                return (
+                  <div>
+                    <label className="label">Base de cálculo</label>
+                    <input
+                      type="number"
+                      min={0}
+                      max={maxAllowed}
+                      className={cn("input", overMax && "border-red-400 focus:ring-red-400")}
+                      placeholder={placeholder}
+                      value={quantity ?? ""}
+                      onChange={e => {
+                        if (!e.target.value) {
+                          setQuantity(null);
+                          return;
+                        }
+                        setQuantity(Number(e.target.value));
+                      }}
+                    />
+                    {overMax ? (
+                      <p className="text-xs text-red-600 font-medium mt-1">
+                        Máximo de {maxLabel} permitido: {maxAllowed}
+                      </p>
+                    ) : (
+                      <p className="text-xs text-surface-400 mt-1">
+                        {[
+                          cfg.inputHint,
+                          `${cfg.unitValue} pts a cada ${unitPhrase}`,
+                          maxUnitsHint,
+                          `máx ${criterion.maxPoints} pts`,
+                        ].filter(Boolean).join(" · ")}
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
 
               {criterion.scoringType === "percentage" && (
                 <div>
                   <label className="label">Cobertura de esgotamento (%)</label>
                   <input
                     type="number" min={0} max={100} step={0.1} className="input"
-                    placeholder="Ex: 75.5"
+                    placeholder="Ex: 75%"
                     value={pct ?? ""}
                     onChange={e => setPct(e.target.value ? Number(e.target.value) : null)}
                   />
@@ -766,36 +876,152 @@ export default function CriterionModal({
 
               {criterion.scoringType === "per_faixa" &&
                criterion.scoringConfig && "type" in criterion.scoringConfig &&
-               (criterion.scoringConfig as { type: string }).type === "territory" && (
-                <div>
-                  <label className="label">Percentual do território com UC (%)</label>
-                  <input
-                    type="number" min={0} max={100} step={0.1} className="input"
-                    placeholder="Ex: 30"
-                    value={pct ?? ""}
-                    onChange={e => setPct(e.target.value ? Number(e.target.value) : null)}
-                  />
-                </div>
-              )}
+               (criterion.scoringConfig as { type: string }).type === "territory" && (() => {
+                const cfg = criterion.scoringConfig as PerFaixaConfigTerritory;
+                const matched = pct != null ? getTerritoryRange(cfg, pct) : null;
+
+                return (
+                  <div className="space-y-3">
+                    <div>
+                      <label className="label">Base de cálculo</label>
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        step={0.1}
+                        className="input"
+                        placeholder="% do território"
+                        value={pct ?? ""}
+                        onChange={e => setPct(e.target.value ? Number(e.target.value) : null)}
+                      />
+                      <p className="text-xs text-surface-400 mt-1">
+                        Percentual do território municipal com UC · máx {criterion.maxPoints} pts
+                      </p>
+                    </div>
+
+                    <div className="rounded-xl border border-surface-200 overflow-hidden">
+                      <div className="px-3.5 py-2 bg-surface-50 border-b border-surface-200">
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-surface-500">
+                          Faixas de pontuação
+                        </p>
+                      </div>
+                      <ul className="divide-y divide-surface-100">
+                        {cfg.ranges.map((range, idx) => {
+                          const active = matched === range;
+                          return (
+                            <li
+                              key={idx}
+                              className={cn(
+                                "flex items-center justify-between gap-3 px-3.5 py-2 text-sm",
+                                active ? "bg-brand-50/60" : "bg-white"
+                              )}
+                            >
+                              <span className={cn(
+                                "text-xs",
+                                active ? "text-brand-800 font-semibold" : "text-surface-600"
+                              )}>
+                                {formatTerritoryRangeLabel(range)}
+                              </span>
+                              <span className={cn(
+                                "text-xs font-bold tabular-nums",
+                                active ? "text-brand-700" : "text-surface-400"
+                              )}>
+                                {range.points} pts
+                              </span>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {criterion.scoringType === "per_faixa" &&
                criterion.scoringConfig && "type" in criterion.scoringConfig &&
-               (criterion.scoringConfig as { type: string }).type === "population" && (
-                <div>
-                  <label className="label">Nível comprovado de mudas plantadas</label>
-                  <select
-                    value={faixaLevel ?? ""}
-                    onChange={e => setFaixa(e.target.value ? Number(e.target.value) : null)}
-                    className="input"
-                  >
-                    <option value="">Selecione o nível atingido</option>
-                    <option value="1">Nível 1 — 8 pts</option>
-                    <option value="2">Nível 2 — 12 pts</option>
-                    <option value="3">Nível 3 — 30 pts (máximo)</option>
-                  </select>
-                  <p className="text-xs text-surface-400 mt-1">Consulte a tabela C.5 no decreto.</p>
-                </div>
-              )}
+               (criterion.scoringConfig as { type: string }).type === "population" && (() => {
+                const cfg = criterion.scoringConfig as PerFaixaConfigC5;
+                const faixa = getC5Faixa(cfg, population);
+                const derivedLevel =
+                  quantity != null ? resolveC5LevelFromQuantity(cfg, population, quantity) : 0;
+                const faixaIndex = faixa ? cfg.faixas.indexOf(faixa) + 1 : null;
+
+                return (
+                  <div className="space-y-3">
+                    <div className="rounded-xl border border-surface-200 bg-surface-50 px-3.5 py-3">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-surface-500">
+                        Faixa do município
+                      </p>
+                      <p className="text-sm font-medium text-surface-800 mt-0.5">
+                        {faixa && faixaIndex
+                          ? `Faixa ${faixaIndex}: ${formatC5FaixaLabel(faixa)}`
+                          : "População fora das faixas do edital"}
+                      </p>
+                      <p className="text-xs text-surface-400 mt-0.5">
+                        População: {population.toLocaleString("pt-BR")} habitantes
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="label">Base de cálculo</label>
+                      <input
+                        type="number"
+                        min={0}
+                        className="input"
+                        placeholder="Mudas"
+                        value={quantity ?? ""}
+                        onChange={e => setQuantity(e.target.value ? Number(e.target.value) : null)}
+                      />
+                      <p className="text-xs text-surface-400 mt-1">
+                        Pontuação conforme quantidade de mudas na faixa populacional · máx {criterion.maxPoints} pts
+                      </p>
+                    </div>
+
+                    {faixa && (
+                      <div className="rounded-xl border border-surface-200 overflow-hidden">
+                        <div className="px-3.5 py-2 bg-surface-50 border-b border-surface-200">
+                          <p className="text-[11px] font-semibold uppercase tracking-wide text-surface-500">
+                            Níveis desta faixa
+                          </p>
+                        </div>
+                        <ul className="divide-y divide-surface-100">
+                          {faixa.levels
+                            .slice()
+                            .sort((a, b) => a.level - b.level)
+                            .map((lvl) => {
+                              const reached = derivedLevel === lvl.level;
+                              return (
+                                <li
+                                  key={lvl.level}
+                                  className={cn(
+                                    "flex items-center justify-between gap-3 px-3.5 py-2 text-sm",
+                                    reached ? "bg-brand-50/60" : "bg-white"
+                                  )}
+                                >
+                                  <span className={cn(
+                                    "text-xs",
+                                    reached ? "text-brand-800 font-semibold" : "text-surface-600"
+                                  )}>
+                                    Nível {lvl.level}
+                                    <span className="font-normal text-surface-400">
+                                      {" "}· ≥ {lvl.minQty.toLocaleString("pt-BR")} mudas
+                                    </span>
+                                  </span>
+                                  <span className={cn(
+                                    "text-xs font-bold tabular-nums",
+                                    reached ? "text-brand-700" : "text-surface-400"
+                                  )}>
+                                    {lvl.points} pts
+                                  </span>
+                                </li>
+                              );
+                            })}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
               
 
@@ -825,7 +1051,7 @@ export default function CriterionModal({
 
               <button
                 onClick={handleSave}
-                disabled={saving}
+                disabled={saving || perUnitOverMax}
                 className={cn("btn btn-primary w-full justify-center", justSaved && "bg-green-600 hover:bg-green-600")}
               >
                 {saving
