@@ -91,7 +91,7 @@ export function computeScoringPoints(
       }
 
       if ("type" in cfg && cfg.type === "territory") {
-        if (item.percentageValue == null || item.percentageValue === "") return 0;
+        if (item.percentageValue == null) return 0;
         const pct = Number(item.percentageValue);
         if (!Number.isFinite(pct)) return 0;
         return calculateTerritoryPoints(cfg as PerFaixaConfigTerritory, pct);
