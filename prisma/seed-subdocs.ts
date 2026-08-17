@@ -582,15 +582,16 @@ const subDocs: SubDocInput[] = [
     order: 5,
   },
 
-  // ── D.5 ──────────────────────────────────────────────────────────────────
-  {
+  // ── D.5 ── 4 relatórios operacionais (1 por ação · 4 pts cada) ────────────
+  ...[1, 2, 3, 4].map((n) => ({
     criteriaId: "D.5",
-    code: "relatorio_protecao_solo",
-    label: "Relatório Operacional de proteção de solo (com ART)",
-    description: "Relatório por ação, contendo diagnóstico da área (localização, coordenadas, extensão), metodologia analítica, técnicas e materiais (cobertura, contenção, cercamento, plantio direto com espécies nativas, etc.), ART, notas fiscais de insumos, fotos georreferenciadas antes/durante/depois e demonstração dos resultados. Taxa mínima de sobrevivência de mudas ≥50% após 45 dias.",
+    code: `relatorio_protecao_solo_${n}`,
+    label: `Relatório Operacional de proteção de solo — Ação ${n} (com ART)`,
+    description:
+      "Relatório da ação, contendo diagnóstico da área (localização, coordenadas, extensão), metodologia analítica, técnicas e materiais (cobertura, contenção, cercamento, plantio direto com espécies nativas, etc.), ART, notas fiscais de insumos, fotos georreferenciadas antes/durante/depois e demonstração dos resultados. Taxa mínima de sobrevivência de mudas ≥50% após 45 dias. Preencha apenas as ações que o município executou.",
     acceptsMultiple: true,
-    order: 1,
-  },
+    order: n,
+  })),
 
   // ── D.6 ──────────────────────────────────────────────────────────────────
   {
@@ -696,102 +697,49 @@ const subDocs: SubDocInput[] = [
     order: 2,
   },
 
-  // ── E.2 ──────────────────────────────────────────────────────────────────
-  {
+  // ── E.2 ── 4 relatórios operacionais (1 por ação · 4 pts cada) ────────────
+  ...[1, 2, 3, 4].map((n) => ({
     criteriaId: "E.2",
-    code: "projeto_nascentes",
-    label: "Projeto Técnico de proteção de nascentes (com ART)",
+    code: `relatorio_nascentes_${n}`,
+    label: `Relatório Operacional de proteção de nascentes — Ação ${n} (com ART)`,
     description:
-      "Projeto com diagnóstico da área (coordenadas, extensão, condições do solo, da água e da vegetação), metodologia empregada (cercamento, nucleação ou plantio), espécies nativas representativas do bioma (mín. 2), quantitativo e cronograma. Se plantio: taxa mínima de sobrevivência das mudas ≥50% após 45 dias, conforme TR da SEMARH ou metodologia equivalente.",
+      "Relatório completo da ação, com ART: diagnóstico e localização das áreas (mapas e coordenadas), metodologia e ações executadas (cercamento, plantio ou nucleação), espécies nativas do bioma (mín. 2), quantitativo e diversidade de mudas, comprovação documental de insumos (notas fiscais) e fotos georreferenciadas antes/depois. Se plantio: sobrevivência das mudas ≥50% após 45 dias. Preencha apenas as ações executadas.",
     acceptsMultiple: true,
-    order: 1,
-  },
-  {
-    criteriaId: "E.2",
-    code: "relatorio_nascentes",
-    label: "Relatório Operacional de proteção de nascentes (com ART)",
-    description:
-      "Localização das áreas, mapas e coordenadas; diagnóstico; metodologia e ações executadas (cercamento, plantio ou nucleação); quantitativo de mudas plantadas e diversidade mínima; fotos georreferenciadas com antes e depois para demonstração de resultados, especialmente no plantio direto. Com ART ou equivalente.",
-    acceptsMultiple: true,
-    order: 2,
-  },
-  {
-    criteriaId: "E.2",
-    code: "insumos_nascentes",
-    label: "Comprovação documental de insumos",
-    description:
-      "Notas fiscais de mudas, cercas e demais materiais empregados na proteção das nascentes.",
-    acceptsMultiple: true,
-    order: 3,
-  },
-  {
-    criteriaId: "E.2",
-    code: "mapas_nascentes",
-    label: "Mapas georreferenciados e quadro resumo",
-    description:
-      "Mapas georreferenciados das áreas protegidas e quadro resumo de espécies plantadas, áreas recuperadas e extensão de cercamentos.",
-    acceptsMultiple: true,
-    order: 4,
-  },
+    order: n,
+  })),
 
-  // ── E.3 ──────────────────────────────────────────────────────────────────
-  {
+  // ── E.3 ── 4 relatórios operacionais (1 por ação · 4 pts cada) ────────────
+  ...[1, 2, 3, 4].map((n) => ({
     criteriaId: "E.3",
-    code: "relatorio_aguas_subterraneas",
-    label: "Relatório Operacional de proteção de águas subterrâneas",
-    description: "Diagnóstico, descrição e geolocalização da fonte, descrição da ação de proteção, metodologia, resultados (fotos datadas e georreferenciadas) e responsabilidade técnica.",
+    code: `relatorio_aguas_subterraneas_${n}`,
+    label: `Relatório Operacional de proteção de águas subterrâneas — Ação ${n}`,
+    description:
+      "Relatório da ação: diagnóstico, descrição e geolocalização da fonte, descrição da ação de proteção, metodologia, resultados (fotos datadas e georreferenciadas) e responsabilidade técnica. Preencha apenas as ações executadas.",
     acceptsMultiple: true,
-    order: 1,
-  },
+    order: n,
+  })),
 
-  // ── E.4 ──────────────────────────────────────────────────────────────────
-  {
+  // ── E.4 ── 4 relatórios operacionais (1 por ação · 4 pts cada) ────────────
+  ...[1, 2, 3, 4].map((n) => ({
     criteriaId: "E.4",
-    code: "projeto_aguas_superficiais",
-    label: "Projeto Técnico de proteção de águas superficiais (com ART)",
+    code: `relatorio_aguas_superficiais_${n}`,
+    label: `Relatório Operacional de proteção de águas superficiais — Ação ${n} (com ART)`,
     description:
-      "Projeto com diagnóstico da área (coordenadas, extensão, condições do solo, da água e da vegetação), metodologia (cercamento, plantio, nucleação, limpeza, desassoreamento, controle da erosão, plantio direto). Se plantio: espécies nativas do bioma, quantitativo, cronograma e taxa mínima de sobrevivência das mudas ≥50% após 45 dias, conforme TR da SEMARH ou metodologia equivalente.",
+      "Relatório completo da ação, com ART: localização e diagnóstico das áreas (mapas, coordenadas e extensão), metodologia completa e analítica (cercamento, plantio, nucleação, limpeza, desassoreamento, controle da erosão), quantitativo e diversidade de mudas, comprovação documental de insumos/mudas (notas fiscais) e fotos georreferenciadas antes/durante/depois. Se plantio: sobrevivência das mudas ≥50% após 45 dias. Preencha apenas as ações executadas.",
     acceptsMultiple: true,
-    order: 1,
-  },
-  {
-    criteriaId: "E.4",
-    code: "relatorio_aguas_superficiais",
-    label: "Relatório Operacional de proteção de águas superficiais (com ART)",
-    description:
-      "Localização e diagnóstico das áreas com mapas, coordenadas e extensão; ações executadas com metodologia completa e analítica (cercamento, plantio, nucleação, limpeza, desassoreamento, controle da erosão); quantitativo de mudas e diversidade mínima conforme o projeto; fotos georreferenciadas antes, durante e depois, com comprovação analítica dos resultados. Com ART ou equivalente.",
-    acceptsMultiple: true,
-    order: 2,
-  },
-  {
-    criteriaId: "E.4",
-    code: "insumos_aguas_superficiais",
-    label: "Comprovação documental de insumos e mudas",
-    description:
-      "Notas fiscais de mudas, cercas e demais materiais empregados na proteção/manutenção de águas superficiais.",
-    acceptsMultiple: true,
-    order: 3,
-  },
-  {
-    criteriaId: "E.4",
-    code: "mapas_aguas_superficiais",
-    label: "Mapas georreferenciados e quadro resumo",
-    description:
-      "Mapas georreferenciados das áreas protegidas e quadro resumo de espécies plantadas, áreas recuperadas e extensão de cercamentos.",
-    acceptsMultiple: true,
-    order: 4,
-  },
+    order: n,
+  })),
 
-  // ── E.5 ──────────────────────────────────────────────────────────────────
-  {
+  // ── E.5 ── 3 relatórios técnicos (1 por fonte · 5 pts cada) ───────────────
+  ...[1, 2, 3].map((n) => ({
     criteriaId: "E.5",
-    code: "relatorio_monitoramento_agua",
-    label: "Relatório Técnico de Monitoramento da qualidade da água",
+    code: `relatorio_monitoramento_agua_${n}`,
+    label: `Relatório Técnico de Monitoramento — Fonte ${n}`,
     description:
-      "Relatório assinado por responsável habilitado, com consolidação dos laudos laboratoriais (físico-química e bacteriológica) das fontes de captação municipais, em conformidade com a Portaria GM/MS nº 888/2021 (ou norma superveniente), cobrindo no mínimo 2 trimestres distintos do ano de apuração, e identificação georreferenciada dos pontos de coleta.",
+      "Relatório assinado por responsável habilitado, com consolidação dos laudos laboratoriais (físico-química e bacteriológica) da fonte de captação municipal, em conformidade com a Portaria GM/MS nº 888/2021 (ou norma superveniente), cobrindo no mínimo 2 trimestres distintos do ano de apuração, e identificação georreferenciada dos pontos de coleta. Preencha apenas as fontes monitoradas.",
     acceptsMultiple: true,
-    order: 1,
-  },
+    order: n,
+  })),
 
   // ── E.6 ──────────────────────────────────────────────────────────────────
   {
@@ -1001,15 +949,16 @@ const subDocs: SubDocInput[] = [
     order: 2,
   },
 
-  // ── H.2 ──────────────────────────────────────────────────────────────────
-  {
+  // ── H.2 ── 6 relatórios técnicos (1 por ação · 10 pts cada) ───────────────
+  ...[1, 2, 3, 4, 5, 6].map((n) => ({
     criteriaId: "H.2",
-    code: "relatorio_acao_conjunta_uc",
-    label: "Relatório Técnico de ação conjunta com UC estadual/federal",
-    description: "Descrição da ação de cooperação para gestão da UC, metodologia e resultados (fotos datadas e georreferenciadas). Um relatório por ação (máx. 6 ações).",
+    code: `relatorio_acao_conjunta_uc_${n}`,
+    label: `Relatório Técnico de ação conjunta com UC — Ação ${n}`,
+    description:
+      "Relatório da ação de cooperação com UC estadual/federal: descrição da ação de gestão da UC, metodologia e resultados (fotos datadas e georreferenciadas). Preencha apenas as ações executadas.",
     acceptsMultiple: true,
-    order: 1,
-  },
+    order: n,
+  })),
 
   // ── H.3 ──────────────────────────────────────────────────────────────────
   {
@@ -1299,6 +1248,24 @@ async function main() {
   }
 
   console.log(`✅ ${created} sub-documentos inseridos/atualizados, ${skipped} com erro.`);
+
+  // Remove slots obsoletos: para cada critério gerenciado aqui, apaga os
+  // sub-documentos cujo code não está mais na lista desejada.
+  const desiredByCriteria = new Map<string, string[]>();
+  for (const sd of subDocs) {
+    const list = desiredByCriteria.get(sd.criteriaId) ?? [];
+    list.push(sd.code);
+    desiredByCriteria.set(sd.criteriaId, list);
+  }
+
+  let pruned = 0;
+  for (const [criteriaId, codes] of desiredByCriteria) {
+    const { count } = await prisma.criteriaSubDoc.deleteMany({
+      where: { criteriaId, code: { notIn: codes } },
+    });
+    pruned += count;
+  }
+  console.log(`🧹 ${pruned} sub-documentos obsoletos removidos.`);
 }
 
 main()

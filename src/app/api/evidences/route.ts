@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { sendEvidenceUploadedEmail } from "@/lib/brevo";
 import { logAction } from "@/lib/audit";
+import { syncQuantityFromUnits } from "@/lib/checklist-units";
 
 function getPublicFileUrl(fileKey: string): string {
   const publicUrl = process.env.CLOUDFLARE_R2_PUBLIC_URL;
@@ -85,6 +86,7 @@ export async function POST(req: NextRequest) {
   const {
     checklistItemId,
     subDocId,        // ← ADICIONADO
+    unitId,
     kind,            // document (pontua) | evidence (não pontua)
     fileName,
     fileKey,
@@ -118,6 +120,7 @@ export async function POST(req: NextRequest) {
     data: {
       checklistItemId,
       subDocId:      evidenceKind === "document" ? (subDocId ?? null) : null,
+      unitId:        evidenceKind === "document" ? (unitId ?? null) : null,
       kind:          evidenceKind,
       fileName,
       fileUrl,
@@ -149,6 +152,9 @@ export async function POST(req: NextRequest) {
       },
     },
   });
+
+  // Critérios com docs por unidade: só unidades documentadas pontuam
+  await syncQuantityFromUnits(checklistItemId);
 
   // Auditoria
   await logAction({

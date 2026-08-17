@@ -271,9 +271,31 @@ model ChecklistItem {
   criteria      Criteria     @relation(fields: [criteriaId], references: [id])
   updatedByUser User?        @relation("UpdatedBy", fields: [updatedBy], references: [id])
   evidences     Evidence[]
+  units         ChecklistUnit[]
 
   @@unique([municipalityId, certameId, criteriaId])
   @@map("checklist_items")
+}
+
+// ─────────────────────────────────────────────
+// Unidades repetíveis (ação / fonte / evento…)
+// ─────────────────────────────────────────────
+
+model ChecklistUnit {
+  id              String   @id @default(uuid())
+  checklistItemId String   @map("checklist_item_id")
+  /// Ordem 1-based exibida na UI
+  index           Int
+  /// Título opcional editável (ex.: "Nascente do sítio X")
+  title           String?
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  checklistItem ChecklistItem @relation(fields: [checklistItemId], references: [id], onDelete: Cascade)
+  evidences     Evidence[]
+
+  @@unique([checklistItemId, index])
+  @@map("checklist_units")
 }
 
 // ─────────────────────────────────────────────
@@ -285,6 +307,8 @@ model Evidence {
   checklistItemId String   @map("checklist_item_id")
   /// Sub-documento ao qual esta evidência pertence (null = genérico)
   subDocId        String?  @map("sub_doc_id")
+  /// Unidade (ação/fonte) à qual a evidência pertence (null = doc global do critério)
+  unitId          String?  @map("unit_id")
   /// document = aba Documentos (pontua); evidence = aba Evidências (não pontua)
   kind            EvidenceKind @default(document)
   fileName        String   @map("file_name")
@@ -314,8 +338,9 @@ model Evidence {
   followsAnnexII         Boolean? @map("follows_annex_ii")
   isOriginalDoc          Boolean? @map("is_original_doc")
 
-  checklistItem ChecklistItem  @relation(fields: [checklistItemId], references: [id], onDelete: Cascade)
+  checklistItem ChecklistItem   @relation(fields: [checklistItemId], references: [id], onDelete: Cascade)
   subDoc        CriteriaSubDoc? @relation(fields: [subDocId], references: [id])
+  unit          ChecklistUnit?  @relation(fields: [unitId], references: [id], onDelete: Cascade)
   uploader      User            @relation("EvidenceUploader", fields: [uploadedBy], references: [id])
   validator     User?           @relation("EvidenceValidator", fields: [validatedBy], references: [id])
 

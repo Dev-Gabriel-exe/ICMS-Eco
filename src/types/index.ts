@@ -41,6 +41,21 @@ export interface PerUnitConfig {
   inputPlaceholder?: string;
   /** Texto auxiliar na UI (ex.: limite de 3h por servidor) */
   inputHint?: string;
+  /**
+   * true = cada slot de documento equivale a uma unidade pontuável
+   * (1 relatório = 1 ação). quantity vem da contagem de slots preenchidos,
+   * sem campo "Base de cálculo". Requer nº de subDocs = maxPoints / unitValue.
+   */
+  slotsAsUnits?: boolean;
+  /**
+   * true = UI de unidades repetíveis (ação/fonte) com docs por unidade.
+   * quantity passa a refletir o nº de unidades cadastradas.
+   */
+  docsPerUnit?: boolean;
+  /** Prefixo do título da unidade, ex.: "Ação de proteção de solo" */
+  unitTitle?: string;
+  /** Texto explicativo no cabeçalho da aba Documentos */
+  unitIntro?: string;
 }
 
 export interface PercentageConfig {
@@ -150,6 +165,7 @@ export interface ChecklistItem {
   // Relações opcionais para display
   criteria?: Criteria;
   evidences?: Evidence[];
+  units?: ChecklistUnit[];
 }
 
 // ─────────────────────────────────────────────
@@ -162,11 +178,22 @@ export type ValidationStatus = "pending" | "approved" | "rejected";
 /** document = aba Documentos (pontua); evidence = aba Evidências (não pontua) */
 export type EvidenceKind = "document" | "evidence";
 
+export interface ChecklistUnit {
+  id: string;
+  checklistItemId: string;
+  index: number;
+  title: string | null;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+}
+
 export interface Evidence {
   id: string;
   checklistItemId: string;
   /** ID do sub-documento ao qual esta evidência pertence (null = genérico) */
   subDocId: string | null;
+  /** Unidade (ação/fonte) à qual a evidência pertence */
+  unitId?: string | null;
   kind: EvidenceKind;
   fileName: string;
   fileUrl: string;

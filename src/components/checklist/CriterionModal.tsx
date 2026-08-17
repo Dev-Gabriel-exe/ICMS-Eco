@@ -6,12 +6,12 @@ import { createPortal } from "react-dom";
 import {
   X, FileText, Info, Loader2, ExternalLink, Upload,
   CheckCircle2, XCircle, Clock, Circle, AlertTriangle,
-  Eye, Download, Trash2, RefreshCw, ChevronRight,
+  Eye, Download, Trash2, RefreshCw, ChevronRight, ChevronDown, Plus,
 } from "lucide-react";
-import { calculateItemPoints, computeScoringPoints, formatC5FaixaLabel, formatTerritoryRangeLabel, getC5Faixa, getTerritoryRange, resolveC5LevelFromQuantity } from "@/lib/scoring";
+import { calculateItemPoints, computeScoringPoints, countDocumentedUnits, countFilledSlots, formatC5FaixaLabel, formatTerritoryRangeLabel, getC5Faixa, getTerritoryRange, resolveC5LevelFromQuantity } from "@/lib/scoring";
 import { formatFileSize, getFileIcon, cn } from "@/lib/utils";
 import { MAX_FILE_SIZE_BYTES } from "@/lib/r2";
-import type { ChecklistItem, Criteria, CriteriaSubDoc, Evidence, EvidenceKind, PerFaixaConfigC5, PerFaixaConfigTerritory, PerUnitConfig, ValidationStatus } from "@/types";
+import type { ChecklistItem, ChecklistUnit, Criteria, CriteriaSubDoc, Evidence, EvidenceKind, PerFaixaConfigC5, PerFaixaConfigTerritory, PerUnitConfig, ValidationStatus } from "@/types";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -119,12 +119,15 @@ interface SubDocCardProps {
   criteriaId: string;
   municipalityId: string;
   certameId: string;
+  unitId?: string | null;
   onUploaded: (ev: Evidence) => void;
   onDeleted: (evId: string) => void;
+  onChecklistItemCreated?: (item: ChecklistItem) => void;
 }
 
 function SubDocCard({
-  subDoc, evidences, checklistItemId, criteriaId, municipalityId, certameId, onUploaded, onDeleted,
+  subDoc, evidences, checklistItemId, criteriaId, municipalityId, certameId,
+  unitId, onUploaded, onDeleted, onChecklistItemCreated,
 }: SubDocCardProps) {
   const fileRef             = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -171,6 +174,7 @@ function SubDocCard({
         });
         const chkD = await chk.json();
         itemId = chkD.data?.id;
+        if (chkD.success && chkD.data) onChecklistItemCreated?.(chkD.data as ChecklistItem);
       }
       if (!itemId) throw new Error("Não foi possível criar o item do checklist");
 
@@ -179,6 +183,7 @@ function SubDocCard({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           checklistItemId: itemId, subDocId: subDoc.id,
+          unitId: unitId ?? null,
           kind: "document",
           fileName: file.name, fileKey,
           fileSizeBytes: file.size, fileType: file.type,
@@ -590,16 +595,79 @@ export default function CriterionModal({
 
   const [evidences, setEvidences]   = useState<Evidence[]>((item?.evidences ?? []) as Evidence[]);
   const [loadingEvs, setLoadingEvs] = useState(false);
+  const [units, setUnits]           = useState<ChecklistUnit[]>([]);
+  const [loadingUnits, setLoadingUnits] = useState(false);
+  const [addingUnit, setAddingUnit] = useState(false);
+  const [expandedUnits, setExpandedUnits] = useState<Record<string, boolean>>({});
+  const [localItem, setLocalItem]   = useState<ChecklistItem | undefined>(item);
 
   const hasSubDocs = (criterion.subDocs?.length ?? 0) > 0;
   const [tab, setTab] = useState<TabId>(hasSubDocs ? "documentos" : "pontuacao");
 
+  const perUnitCfg =
+    criterion.scoringType === "per_unit" &&
+    criterion.scoringConfig &&
+    "unitValue" in criterion.scoringConfig
+      ? (criterion.scoringConfig as PerUnitConfig)
+      : null;
+  const docsPerUnit = Boolean(perUnitCfg?.docsPerUnit);
+  /** Cada slot de documento vale uma unidade: quantidade vem dos slots preenchidos. */
+  const slotsAsUnits = Boolean(perUnitCfg?.slotsAsUnits);
+  const maxUnits = perUnitCfg
+    ? Math.floor(perUnitCfg.maxPoints / perUnitCfg.unitValue)
+    : 0;
+  const unitTitleBase = perUnitCfg?.unitTitle
+    ?? (perUnitCfg?.measureLabel === "fonte" ? "Fonte de captação" : "Ação");
+  const measurePlural =
+    perUnitCfg?.measureLabel === "fonte"
+      ? "fontes"
+      : (MEASURE_PLACEHOLDERS[perUnitCfg?.measureLabel ?? "ação"] ?? "Ações").toLowerCase();
+
   const scoringEvidences = evidences.filter(isScoringDoc);
   const supportingEvidences = evidences.filter(e => e.kind === "evidence");
 
-  const pendingDocsCount = hasSubDocs
+  // Só unidades com documentação enviada pontuam — cadastrar não pontua
+  const documentedUnits = docsPerUnit
+    ? countDocumentedUnits(units, criterion.subDocs ?? [], evidences)
+    : 0;
+  const filledSlots = slotsAsUnits
+    ? countFilledSlots(criterion.subDocs ?? [], evidences)
+    : 0;
+  const effectiveQuantity = docsPerUnit
+    ? documentedUnits
+    : slotsAsUnits
+    ? filledSlots
+    : quantity;
+
+  /** Slots fixos: agrupa por tipo de documento, ignorando vínculo de unidade. */
+  const subDocEvidences = (subDocId: string) =>
+    scoringEvidences.filter(
+      e => e.subDocId === subDocId && (docsPerUnit ? !e.unitId : true)
+    );
+
+  function unitHasAllDocs(unitId: string) {
+    const slots = criterion.subDocs ?? [];
+    const unitEvs = scoringEvidences.filter(
+      e => e.unitId === unitId && e.validationStatus !== "rejected"
+    );
+    if (slots.length === 0) return unitEvs.length > 0;
+    return slots.every(sd => unitEvs.some(e => e.subDocId === sd.id));
+  }
+
+  const pendingDocsCount = docsPerUnit && hasSubDocs
+    ? units.reduce((acc, unit) => {
+        const unitEvs = scoringEvidences.filter((e) => e.unitId === unit.id);
+        return (
+          acc +
+          (criterion.subDocs ?? []).filter((sd) => {
+            const st = deriveSubDocStatus(unitEvs.filter((e) => e.subDocId === sd.id));
+            return st === "not_started" || st === "rejected";
+          }).length
+        );
+      }, 0)
+    : hasSubDocs
     ? (criterion.subDocs ?? []).filter(sd => {
-        const st = deriveSubDocStatus(scoringEvidences.filter(e => e.subDocId === sd.id));
+        const st = deriveSubDocStatus(subDocEvidences(sd.id));
         return st === "not_started" || st === "rejected";
       }).length
     : 0;
@@ -608,7 +676,7 @@ export default function CriterionModal({
     e => e.validationStatus === "pending" || e.validationStatus === "rejected"
   ).length;
 
-  const fakeItem = { status, quantity, percentageValue: pct, faixaLevel } as unknown as ChecklistItem;
+  const fakeItem = { status, quantity: effectiveQuantity, percentageValue: pct, faixaLevel } as unknown as ChecklistItem;
   // fixed: só pontua com status Completo (preview). Demais tipos: preview independente do status.
   // Persistência oficial (pointsClaimed) só no save via API.
   const points =
@@ -616,13 +684,9 @@ export default function CriterionModal({
       ? calculateItemPoints(fakeItem, criterion, population)
       : computeScoringPoints(fakeItem, criterion, population);
 
-  const perUnitCfg =
-    criterion.scoringType === "per_unit" &&
-    criterion.scoringConfig &&
-    "unitValue" in criterion.scoringConfig
-      ? (criterion.scoringConfig as PerUnitConfig)
-      : null;
   const perUnitOverMax =
+    !docsPerUnit &&
+    !slotsAsUnits &&
     perUnitCfg != null &&
     quantity != null &&
     quantity > getPerUnitMaxAllowed(perUnitCfg);
@@ -633,17 +697,103 @@ export default function CriterionModal({
 
   // Fetch evidências
   const fetchEvidences = useCallback(async () => {
-    if (!item?.id) return;
+    const itemId = localItem?.id ?? item?.id;
+    if (!itemId) return;
     setLoadingEvs(true);
     try {
-      const res  = await fetch(`/api/evidences?checklistItemId=${item.id}`);
+      const res  = await fetch(`/api/evidences?checklistItemId=${itemId}`);
       const data = await res.json();
       if (data.success) setEvidences(data.data ?? []);
     } catch { /* silencioso */ }
     finally { setLoadingEvs(false); }
-  }, [item?.id]);
+  }, [localItem?.id, item?.id]);
+
+  const fetchUnits = useCallback(async () => {
+    const itemId = localItem?.id ?? item?.id;
+    if (!docsPerUnit || !itemId) {
+      setUnits([]);
+      return;
+    }
+    setLoadingUnits(true);
+    try {
+      const res = await fetch(`/api/checklist/units?checklistItemId=${itemId}`);
+      const data = await res.json();
+      if (data.success) {
+        const list = (data.data ?? []) as ChecklistUnit[];
+        setUnits(list);
+        setExpandedUnits((prev) => {
+          const next = { ...prev };
+          for (const u of list) {
+            if (next[u.id] === undefined) next[u.id] = list.length <= 2;
+          }
+          return next;
+        });
+      }
+    } catch { /* silencioso */ }
+    finally { setLoadingUnits(false); }
+  }, [docsPerUnit, localItem?.id, item?.id]);
 
   useEffect(() => { fetchEvidences(); }, [fetchEvidences]);
+  useEffect(() => { fetchUnits(); }, [fetchUnits]);
+
+  async function handleAddUnit() {
+    if (!docsPerUnit || units.length >= maxUnits) return;
+    setAddingUnit(true);
+    try {
+      const res = await fetch("/api/checklist/units", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ municipalityId, certameId, criteriaId: criterion.id }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error ?? "Erro ao adicionar");
+      const newUnit = data.data.unit as ChecklistUnit;
+      const updatedItem = data.data.checklistItem as ChecklistItem;
+      setLocalItem(updatedItem);
+      setUnits((prev) => [...prev, newUnit].sort((a, b) => a.index - b.index));
+      setExpandedUnits((prev) => ({ ...prev, [newUnit.id]: true }));
+      if (updatedItem.id) {
+        // refresh evidences in case
+        setTimeout(() => fetchEvidences(), 0);
+      }
+      onSaved(updatedItem);
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Não foi possível adicionar a unidade");
+    } finally {
+      setAddingUnit(false);
+    }
+  }
+
+  async function handleRemoveUnit(unitId: string) {
+    if (!confirm("Remover esta unidade e todos os arquivos vinculados?")) return;
+    try {
+      const res = await fetch(`/api/checklist/units?unitId=${unitId}`, { method: "DELETE" });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error ?? "Erro ao remover");
+      const updatedItem = data.data.checklistItem as ChecklistItem | null;
+      if (updatedItem) {
+        setLocalItem(updatedItem);
+        setUnits(updatedItem.units ?? []);
+        onSaved(updatedItem);
+      } else {
+        setUnits((prev) => prev.filter((u) => u.id !== unitId));
+      }
+      setEvidences((prev) => prev.filter((e) => e.unitId !== unitId));
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Não foi possível remover");
+    }
+  }
+
+  async function handleRenameUnit(unitId: string, title: string) {
+    setUnits((prev) => prev.map((u) => (u.id === unitId ? { ...u, title: title || null } : u)));
+    try {
+      await fetch("/api/checklist/units", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ unitId, title }),
+      });
+    } catch { /* silencioso */ }
+  }
 
   // Keyboard + scroll lock
   useEffect(() => {
@@ -686,7 +836,7 @@ export default function CriterionModal({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         municipalityId, certameId, criteriaId: criterion.id,
-        status, quantity, percentageValue: pct, faixaLevel: levelToSave,
+        status, quantity: effectiveQuantity, percentageValue: pct, faixaLevel: levelToSave,
         mapLink: mapLink || null, notes: notes || null,
       }),
     });
@@ -795,7 +945,63 @@ export default function CriterionModal({
                 </select>
               </div>
 
-              {criterion.scoringType === "per_unit" && (() => {
+              {criterion.scoringType === "per_unit" && docsPerUnit && perUnitCfg && (
+                <div className="space-y-3">
+                  <div className="rounded-xl border border-surface-200 bg-surface-50 px-3.5 py-3">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-surface-500">
+                      {measurePlural} cadastradas
+                    </p>
+                    <p className="text-sm font-medium text-surface-800 mt-0.5">
+                      {units.length}/{maxUnits}
+                      <span className="font-normal text-surface-500">
+                        {" "}· {perUnitCfg.unitValue} pts por {perUnitCfg.measureLabel ?? "unidade"} · máx {criterion.maxPoints} pts
+                      </span>
+                    </p>
+                    <p className="text-xs text-surface-500 mt-1">
+                      Pontuando: <span className="font-semibold text-surface-700">{documentedUnits}</span>{" "}
+                      com documentação completa. Cadastrar {perUnitCfg.measureLabel ?? "unidade"} sem
+                      documentos não gera pontos.
+                    </p>
+                    {perUnitCfg.unitIntro && (
+                      <p className="text-xs text-surface-500 mt-2 leading-relaxed">{perUnitCfg.unitIntro}</p>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setTab("documentos")}
+                      className="mt-2 text-xs font-semibold text-brand-700 hover:text-brand-800"
+                    >
+                      Gerenciar {measurePlural} e documentos →
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {criterion.scoringType === "per_unit" && slotsAsUnits && perUnitCfg && (() => {
+                const totalSlots = criterion.subDocs?.length ?? 0;
+                const unitLabel = perUnitCfg.measureLabel ?? "unidade";
+                return (
+                  <div className="rounded-xl border border-surface-200 bg-surface-50 px-3.5 py-3">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-surface-500">
+                      Pontuação por documento
+                    </p>
+                    <p className="text-sm font-medium text-surface-800 mt-0.5">
+                      {filledSlots} de {totalSlots} enviados
+                      <span className="font-normal text-surface-500">
+                        {" "}· {perUnitCfg.unitValue} pts por {unitLabel} · máx {criterion.maxPoints} pts
+                      </span>
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setTab("documentos")}
+                      className="mt-2 text-xs font-semibold text-brand-700 hover:text-brand-800"
+                    >
+                      Enviar documentos →
+                    </button>
+                  </div>
+                );
+              })()}
+
+              {criterion.scoringType === "per_unit" && !docsPerUnit && !slotsAsUnits && (() => {
                 const cfg = criterion.scoringConfig as PerUnitConfig | null;
                 if (!cfg || !("unitValue" in cfg)) return null;
                 const unitSize = cfg.unitSize && cfg.unitSize > 0 ? cfg.unitSize : 1;
@@ -1066,10 +1272,142 @@ export default function CriterionModal({
           {/* TAB: DOCUMENTOS */}
           {tab === "documentos" && (
             <div className="px-5 py-4">
-              {loadingEvs ? (
+              {loadingEvs || (docsPerUnit && loadingUnits) ? (
                 <div className="flex items-center justify-center py-8 gap-2 text-surface-400">
                   <Loader2 size={16} className="animate-spin" />
                   <span className="text-sm">Carregando arquivos…</span>
+                </div>
+              ) : docsPerUnit && hasSubDocs ? (
+                <div className="flex flex-col gap-4">
+                  <div className="rounded-xl border border-surface-200 bg-surface-50 px-3.5 py-3 space-y-2">
+                    <p className="text-xs text-surface-600 leading-relaxed">
+                      {perUnitCfg?.unitIntro ??
+                        `Cadastre até ${maxUnits} ${measurePlural}. Cada uma exige os documentos listados abaixo.`}
+                    </p>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-xs font-semibold text-surface-700">
+                        {measurePlural.charAt(0).toUpperCase() + measurePlural.slice(1)}{" "}
+                        <span className="text-brand-700">{units.length}/{maxUnits}</span>
+                        <span className="font-normal text-surface-400">
+                          {" "}· {documentedUnits} com documentação completa · {points} pts estimados
+                        </span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleAddUnit}
+                        disabled={addingUnit || units.length >= maxUnits}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-brand-600 text-white hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {addingUnit ? (
+                          <Loader2 size={12} className="animate-spin" />
+                        ) : (
+                          <Plus size={12} />
+                        )}
+                        Adicionar {perUnitCfg?.measureLabel ?? "unidade"}
+                      </button>
+                    </div>
+                    {units.length >= maxUnits && (
+                      <p className="text-xs text-amber-700">
+                        Máximo de {maxUnits} {measurePlural} atingido.
+                      </p>
+                    )}
+                  </div>
+
+                  {units.length === 0 ? (
+                    <div className="text-center py-8 text-sm text-surface-400 border border-dashed border-surface-200 rounded-xl">
+                      Nenhuma {perUnitCfg?.measureLabel ?? "unidade"} cadastrada ainda.
+                      <br />
+                      Clique em &quot;Adicionar {perUnitCfg?.measureLabel ?? "unidade"}&quot; para começar.
+                    </div>
+                  ) : (
+                    units.map((unit) => {
+                      const open = expandedUnits[unit.id] ?? false;
+                      const unitEvs = scoringEvidences.filter((e) => e.unitId === unit.id);
+                      const slots = [...(criterion.subDocs ?? [])].sort((a, b) => a.order - b.order);
+                      const sent = slots.filter(
+                        (sd) =>
+                          deriveSubDocStatus(unitEvs.filter((e) => e.subDocId === sd.id)) !==
+                          "not_started"
+                      ).length;
+                      const displayTitle =
+                        unit.title?.trim() || `${unitTitleBase} ${unit.index}`;
+                      const scores = unitHasAllDocs(unit.id);
+
+                      return (
+                        <div
+                          key={unit.id}
+                          className="rounded-xl border border-surface-200 bg-white overflow-hidden"
+                        >
+                          <div className="flex items-center gap-2 px-3.5 py-3 bg-surface-50 border-b border-surface-100">
+                            <button
+                              type="button"
+                              className="p-1 rounded text-surface-500 hover:bg-surface-100"
+                              onClick={() =>
+                                setExpandedUnits((prev) => ({
+                                  ...prev,
+                                  [unit.id]: !open,
+                                }))
+                              }
+                            >
+                              {open ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                            </button>
+                            <div className="flex-1 min-w-0">
+                              <input
+                                className="w-full bg-transparent text-sm font-semibold text-surface-800 outline-none border-b border-transparent focus:border-brand-300"
+                                value={unit.title ?? ""}
+                                placeholder={`${unitTitleBase} ${unit.index}`}
+                                onChange={(e) => handleRenameUnit(unit.id, e.target.value)}
+                              />
+                              <p className="text-[11px] text-surface-400 mt-0.5">
+                                {displayTitle} · docs {sent}/{slots.length}
+                                {" · "}
+                                <span
+                                  className={
+                                    scores ? "text-brand-700 font-semibold" : "text-amber-700"
+                                  }
+                                >
+                                  {scores
+                                    ? `pontua ${perUnitCfg?.unitValue ?? 0} pts`
+                                    : "não pontua ainda"}
+                                </span>
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveUnit(unit.id)}
+                              className="p-1.5 rounded text-surface-400 hover:text-red-600 hover:bg-red-50"
+                              title="Remover unidade"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+
+                          {open && (
+                            <div className="p-3.5 flex flex-col gap-3">
+                              {slots.map((sd) => (
+                                <SubDocCard
+                                  key={`${unit.id}-${sd.id}`}
+                                  subDoc={sd}
+                                  evidences={unitEvs.filter((e) => e.subDocId === sd.id)}
+                                  checklistItemId={localItem?.id ?? item?.id}
+                                  criteriaId={criterion.id}
+                                  municipalityId={municipalityId}
+                                  certameId={certameId}
+                                  unitId={unit.id}
+                                  onUploaded={handleUploaded}
+                                  onDeleted={handleDeleted}
+                                  onChecklistItemCreated={(created) => {
+                                    setLocalItem(created);
+                                    onSaved(created);
+                                  }}
+                                />
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
               ) : hasSubDocs ? (
                 <div className="flex flex-col gap-4">
@@ -1085,10 +1423,10 @@ export default function CriterionModal({
                   {(() => {
                     const total    = criterion.subDocs!.length;
                     const approved = criterion.subDocs!.filter(sd =>
-                      deriveSubDocStatus(scoringEvidences.filter(e => e.subDocId === sd.id)) === "approved"
+                      deriveSubDocStatus(subDocEvidences(sd.id)) === "approved"
                     ).length;
                     const sent = criterion.subDocs!.filter(sd =>
-                      deriveSubDocStatus(scoringEvidences.filter(e => e.subDocId === sd.id)) !== "not_started"
+                      deriveSubDocStatus(subDocEvidences(sd.id)) !== "not_started"
                     ).length;
                     const pctSent = Math.round((sent / total) * 100);
                     return (
@@ -1120,13 +1458,17 @@ export default function CriterionModal({
                     <SubDocCard
                       key={sd.id}
                       subDoc={sd}
-                      evidences={scoringEvidences.filter(e => e.subDocId === sd.id)}
-                      checklistItemId={item?.id}
+                      evidences={subDocEvidences(sd.id)}
+                      checklistItemId={localItem?.id ?? item?.id}
                       criteriaId={criterion.id}
                       municipalityId={municipalityId}
                       certameId={certameId}
                       onUploaded={handleUploaded}
                       onDeleted={handleDeleted}
+                      onChecklistItemCreated={(created) => {
+                        setLocalItem(created);
+                        onSaved(created);
+                      }}
                     />
                   ))}
                 </div>
@@ -1141,7 +1483,7 @@ export default function CriterionModal({
                   </div>
                   <GenericUploader
                     evidences={scoringEvidences.filter(e => !e.subDocId)}
-                    checklistItemId={item?.id}
+                    checklistItemId={localItem?.id ?? item?.id}
                     criteriaId={criterion.id}
                     municipalityId={municipalityId}
                     certameId={certameId}

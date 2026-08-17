@@ -105,6 +105,60 @@ export function computeScoringPoints(
   }
 }
 
+// ─────────────────────────────────────────────
+// 1c. Unidades documentais (ação / fonte / evento)
+// ─────────────────────────────────────────────
+
+interface CountableEvidence {
+  unitId?: string | null;
+  subDocId?: string | null;
+  kind?: string | null;
+  validationStatus?: string | null;
+}
+
+/** Arquivo que pode sustentar pontuação: é documento e não foi reprovado. */
+function isCountableEvidence(ev: CountableEvidence): boolean {
+  return (ev.kind ?? "document") === "document" && ev.validationStatus !== "rejected";
+}
+
+/**
+ * Conta slots de documento preenchidos. Em critérios com `slotsAsUnits`,
+ * cada slot equivale a uma unidade pontuável (1 relatório = 1 ação).
+ */
+export function countFilledSlots(
+  subDocs: { id: string }[],
+  evidences: CountableEvidence[]
+): number {
+  const countable = evidences.filter(isCountableEvidence);
+  return subDocs.filter((sd) =>
+    countable.some((e) => e.subDocId === sd.id)
+  ).length;
+}
+
+/**
+ * Conta unidades que já possuem a documentação exigida — apenas estas pontuam.
+ * Com templates de sub-documento, exige pelo menos um arquivo válido em cada slot.
+ */
+export function countDocumentedUnits(
+  units: { id: string }[],
+  subDocs: { id: string }[],
+  evidences: CountableEvidence[]
+): number {
+  if (units.length === 0) return 0;
+
+  const countable = evidences.filter(isCountableEvidence);
+
+  if (subDocs.length === 0) {
+    return units.filter((u) => countable.some((e) => e.unitId === u.id)).length;
+  }
+
+  return units.filter((u) =>
+    subDocs.every((sd) =>
+      countable.some((e) => e.unitId === u.id && e.subDocId === sd.id)
+    )
+  ).length;
+}
+
 /**
  * Calcula pontos oficiais de um ChecklistItem.
  * Retorna 0 se o item não estiver completo.

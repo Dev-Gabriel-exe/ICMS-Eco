@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { logAction } from "@/lib/audit";
 import { deleteFile } from "@/lib/r2";
 import { sendEvidenceReturnedEmail } from "@/lib/brevo";
+import { syncQuantityFromUnits } from "@/lib/checklist-units";
 
 function canReview(role: string) {
   return role === "admin" || role === "reviewer";
@@ -39,8 +40,10 @@ export async function PUT(
         validatedBy:      session.user.id,
         validatedAt:      new Date(),
       },
-      select: { id: true, fileName: true },
+      select: { id: true, fileName: true, checklistItemId: true },
     });
+
+    await syncQuantityFromUnits(evidence.checklistItemId);
 
     await logAction({
       userId:      session.user.id,
@@ -78,6 +81,8 @@ export async function PUT(
         },
       },
     });
+
+    await syncQuantityFromUnits(evidence.checklistItemId);
 
     await logAction({
       userId:      session.user.id,
@@ -127,6 +132,8 @@ export async function PUT(
         },
       },
     });
+
+    await syncQuantityFromUnits(evidence.checklistItemId);
 
     await logAction({
       userId:      session.user.id,
@@ -237,6 +244,8 @@ export async function DELETE(
   });
 
   await db.evidence.delete({ where: { id } });
+
+  await syncQuantityFromUnits(evidence.checklistItemId);
 
   return NextResponse.json({ success: true });
 }
