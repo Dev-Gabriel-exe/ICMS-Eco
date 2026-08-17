@@ -4,7 +4,18 @@ import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
+/** Host do banco alvo — evita rodar seed no banco errado sem perceber. */
+function targetDb(): string {
+  try {
+    const u = new URL(process.env.DATABASE_URL ?? "");
+    return `${u.host}${u.pathname}`;
+  } catch {
+    return "DATABASE_URL não definida";
+  }
+}
+
 async function main() {
+  console.log(`🔌 Banco alvo: ${targetDb()}`);
   console.log("🌱 Iniciando seed...");
 
   // ── Certame de teste 2026 ──────────────────────────────────────────────────
