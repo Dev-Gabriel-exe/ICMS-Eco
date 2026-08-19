@@ -63,17 +63,9 @@ const subDocs: SubDocInput[] = [
     criteriaId: "A.2",
     code: "relatorio_coleta_seletiva",
     label: "Relatório Operacional com registro fotográfico datado",
-    description: "Relatório descrevendo as ações executadas, com fotos datadas.",
+    description: "Relatório descrevendo as ações executadas, com fotos datadas. Comprovação de destinação entra como evidência.",
     acceptsMultiple: true,
     order: 2,
-  },
-  {
-    criteriaId: "A.2",
-    code: "comprov_destinacao_seletiva",
-    label: "Comprovação de destinação (cooperativas/comércios atacadistas)",
-    description: "Documento que comprove a destinação dos resíduos coletados para cooperativas, comércios atacadistas ou correlatos.",
-    acceptsMultiple: true,
-    order: 3,
   },
 
   // ── A.3 ──────────────────────────────────────────────────────────────────
@@ -119,35 +111,19 @@ const subDocs: SubDocInput[] = [
     criteriaId: "A.6",
     code: "relatorio_pev",
     label: "Relatório Operacional dos Pontos de Entrega Voluntária (PEVs)",
-    description: "Descrição dos pontos de entrega, endereço, quantitativo recebido e registros fotográficos de cada PEV.",
+    description: "Descrição dos pontos de entrega, endereço, quantitativo recebido e registros fotográficos de cada PEV. Comprovação de destinação entra como evidência.",
     acceptsMultiple: true,
     order: 1,
-  },
-  {
-    criteriaId: "A.6",
-    code: "comprov_destinacao_pev",
-    label: "Comprovação de destinação dos resíduos dos PEVs",
-    description: "Documento comprovando destinação para cooperativas ou comércios atacadistas.",
-    acceptsMultiple: true,
-    order: 2,
   },
 
   // ── A.7 ──────────────────────────────────────────────────────────────────
   {
     criteriaId: "A.7",
-    code: "contrato_cooperativa",
-    label: "Contrato/convênio com cooperativa de catadores",
-    description: "Instrumento de parceria com entidade de direito privado que reúna trabalhadores de coleta e seleção de materiais recicláveis.",
-    acceptsMultiple: true,
-    order: 1,
-  },
-  {
-    criteriaId: "A.7",
     code: "projeto_cooperativa",
     label: "Projeto ou documento de planejamento das ações",
-    description: "Documento descrevendo as ações planejadas no período do vínculo de parceria.",
+    description: "Documento descrevendo as ações planejadas no período do vínculo de parceria. Contrato/convênio entra como evidência.",
     acceptsMultiple: true,
-    order: 2,
+    order: 1,
   },
   {
     criteriaId: "A.7",
@@ -155,48 +131,52 @@ const subDocs: SubDocInput[] = [
     label: "Relatório Operacional das ações desenvolvidas",
     description: "Relatório descrevendo as ações de capacitação e treinamento dos associados no período de apuração.",
     acceptsMultiple: true,
-    order: 3,
+    order: 2,
   },
 
-  // ── B.1 ──────────────────────────────────────────────────────────────────
-  {
+  // ── B.1 ── 4 relatórios (1 por evento · 2 pts cada · máx. 8) ──────────────
+  ...[1, 2, 3, 4].map((n) => ({
     criteriaId: "B.1",
-    code: "relatorio_capacitacao_servidores",
-    label: "Relatório Operacional ou certificados de capacitação",
-    description: "Relatório de cursos/palestras/treinamentos (com fotos, ementa, data, carga horária, dados do educador, lista de frequência e comprovação de vínculo) voltados a servidores municipais. Contagem: máx. 3h por servidor.",
+    code: `relatorio_capacitacao_servidores_${n}`,
+    label: `Relatório Operacional de capacitação — Evento ${n}`,
+    description:
+      "Relatório de curso, palestra ou treinamento voltado aos servidores municipais, com fotos, ementa, data, carga horária, dados do educador, lista de frequência e comprovação de vínculo; ou certificados de participação no ano de apuração. Somente será admitida a contagem de 3 horas por servidor. Preencha apenas os eventos realizados.",
     acceptsMultiple: true,
-    order: 1,
-  },
+    order: n,
+  })),
 
-  // ── B.2 ──────────────────────────────────────────────────────────────────
-  {
+  // ── B.2 ── 4 relatórios (1 por evento · 2 pts cada · máx. 8) ──────────────
+  ...[1, 2, 3, 4].map((n) => ({
     criteriaId: "B.2",
-    code: "relatorio_formacao_professores",
-    label: "Relatório Operacional ou certificados de formação de professores",
-    description: "Relatório de cursos/palestras/treinamentos (com fotos, ementa, data, carga horária, dados do instrutor, lista de frequência e comprovação de vínculo) voltados a professores. Contagem: máx. 3h por servidor.",
+    code: `relatorio_formacao_professores_${n}`,
+    label: `Relatório Operacional de formação de professores — Evento ${n}`,
+    description:
+      "Relatório de curso, palestra ou treinamento voltado aos professores do município, com fotos, ementa, data, carga horária, dados do instrutor, lista de frequência e comprovação de vínculo; ou certificados de participação no ano de apuração. Somente será admitida a contagem de 3 horas por servidor. Preencha apenas os eventos realizados.",
     acceptsMultiple: true,
-    order: 1,
-  },
+    order: n,
+  })),
 
-  // ── B.3 ──────────────────────────────────────────────────────────────────
-  {
+  // ── B.3 ── 5 relatórios (1 por evento · 2 pts cada · máx. 10) ─────────────
+  ...[1, 2, 3, 4, 5].map((n) => ({
     criteriaId: "B.3",
-    code: "relatorio_treinamento_tecnicos",
-    label: "Relatório Operacional ou certificados de treinamento de técnicos",
-    description: "Relatório de cursos/palestras/treinamentos (com fotos, ementa, data, carga horária, dados do instrutor, lista de frequência e comprovação de vínculo) voltados a profissionais do órgão municipal de meio ambiente.",
+    code: `relatorio_treinamento_tecnicos_${n}`,
+    label: `Relatório Operacional de treinamento de técnicos — Evento ${n}`,
+    description:
+      "Relatório de curso, palestra ou treinamento voltado aos profissionais do órgão municipal de meio ambiente, com fotos, ementa, data, carga horária, dados do instrutor, lista de frequência e comprovação de vínculo; ou certificados de participação no ano de apuração. Preencha apenas os eventos realizados.",
     acceptsMultiple: true,
-    order: 1,
-  },
+    order: n,
+  })),
 
-  // ── B.4 ──────────────────────────────────────────────────────────────────
-  {
+  // ── B.4 ── 2 publicações (4 pts cada · máx. 8) ────────────────────────────
+  ...[1, 2].map((n) => ({
     criteriaId: "B.4",
-    code: "publicacao_cientifica",
-    label: "Publicação científica (artigo, livro, resumo) com ISSN/ISBN",
-    description: "Publicação pelo município ou por ele financiada, com comprovação de autoria/financiamento. Com ISSN ou ISBN.",
+    code: `publicacao_cientifica_${n}`,
+    label: `Publicação científica ${n} (artigo, livro, resumo) com ISSN/ISBN`,
+    description:
+      "Publicação, pelo município ou por ele financiada, de estudos por meio de artigos científicos, resumos, livros ou publicações científicas no ano de apuração, relacionada aos problemas e questões ambientais do município, com ISSN/ISBN. Anexe comprovação da publicação, cópia do documento, vínculo e autorização do autor e/ou do financiamento público. Preencha apenas as publicações realizadas.",
     acceptsMultiple: true,
-    order: 1,
-  },
+    order: n,
+  })),
 
   // ── B.5 ──────────────────────────────────────────────────────────────────
   {
@@ -208,33 +188,27 @@ const subDocs: SubDocInput[] = [
     order: 1,
   },
 
-  // ── B.6 ──────────────────────────────────────────────────────────────────
-  {
+  // ── B.6 ── 3 projetos (4 pts cada · máx. 12). Relatório operacional vai no próprio projeto.
+  ...[1, 2, 3].map((n) => ({
     criteriaId: "B.6",
-    code: "projeto_ea_escolar",
-    label: "Projeto Escolar/Educacional de Educação Ambiental",
-    description: "Projeto sucinto conforme Relatório Técnico (problemática, justificativa, objetivos, culminância, metodologia, cronograma e avaliação).",
+    code: `projeto_ea_escolar_${n}`,
+    label: `Projeto Escolar/Educacional de Educação Ambiental — Projeto ${n}`,
+    description:
+      "Projeto sucinto conforme Relatório Técnico, contendo problemática, justificativa, objetivos, culminância, metodologia, cronograma e avaliação, abordando questões ambientais locais. Anexe neste mesmo arquivo a comprovação de execução (fotos, relato sucinto, data e frequência). Preencha apenas os projetos realizados.",
     acceptsMultiple: true,
-    order: 1,
-  },
-  {
-    criteriaId: "B.6",
-    code: "relatorio_ea_escolar",
-    label: "Relatório Operacional de execução do projeto",
-    description: "Relatório com fotos, relato sucinto, data de realização e frequência.",
-    acceptsMultiple: true,
-    order: 2,
-  },
+    order: n,
+  })),
 
-  // ── B.7 ──────────────────────────────────────────────────────────────────
-  {
+  // ── B.7 ── 4 relatórios (1 por evento · 2 pts cada · máx. 8) ──────────────
+  ...[1, 2, 3, 4].map((n) => ({
     criteriaId: "B.7",
-    code: "relatorio_evento_ea",
-    label: "Relatório Operacional dos eventos públicos temáticos",
-    description: "Relatório com registro fotográfico datado, local de realização, público-alvo, lista de frequência, conteúdos abordados, relato sucinto e material divulgado.",
+    code: `relatorio_evento_ea_${n}`,
+    label: `Relatório Operacional de evento público temático — Evento ${n}`,
+    description:
+      "Relatório Operacional com registro fotográfico datado, local de realização, público-alvo, lista de frequência, conteúdos abordados, relato sucinto e material divulgado. Eventos públicos temáticos (dia/semana da água, do meio ambiente, proteção à fauna, combate à poluição sonora etc.). Preencha apenas os eventos realizados.",
     acceptsMultiple: true,
-    order: 1,
-  },
+    order: n,
+  })),
 
   // ── B.8 ──────────────────────────────────────────────────────────────────
   {
@@ -317,25 +291,10 @@ const subDocs: SubDocInput[] = [
     criteriaId: "B.10",
     code: "plano_acao_caca",
     label: "Plano de Ação Simplificado",
-    description: "Documento descrevendo objetivo, público-alvo, espécies a proteger e ações planejadas.",
+    description:
+      "Documento descrevendo o objetivo da campanha, o público-alvo, as espécies locais que se busca proteger e as ações planejadas (palestras em associações rurais, distribuição de material informativo, spots em rádio comunitária etc.). Material educativo e relatório fotográfico das ações entram como evidência.",
     acceptsMultiple: true,
     order: 1,
-  },
-  {
-    criteriaId: "B.10",
-    code: "material_educativo_caca",
-    label: "Cópia do Material Educativo Produzido",
-    description: "Exemplar do panfleto, cartaz ou cópia do áudio/vídeo utilizado na campanha.",
-    acceptsMultiple: true,
-    order: 2,
-  },
-  {
-    criteriaId: "B.10",
-    code: "fotos_acoes_caca",
-    label: "Relatório Fotográfico de ao menos 2 ações de sensibilização",
-    description: "Registros de ao menos 2 ações em locais diferentes, georreferenciadas, com data e horário.",
-    acceptsMultiple: true,
-    order: 3,
   },
 
   // ── B.11 ─────────────────────────────────────────────────────────────────
@@ -366,57 +325,27 @@ const subDocs: SubDocInput[] = [
     order: 1,
   },
 
-  // ── C.2 ──────────────────────────────────────────────────────────────────
-  {
+  // ── C.2 ── 5 relatórios operacionais (1 por área · 2 pts cada · máx. 10) ──
+  ...[1, 2, 3, 4, 5].map((n) => ({
     criteriaId: "C.2",
-    code: "relatorio_areas_degradadas",
-    label: "Relatório Operacional de identificação de áreas degradadas",
-    description: "Relatório com identificação das áreas, coordenadas geográficas, diagnóstico do solo/água/vegetação, fatores geradores, registro fotográfico datado e georreferenciado, e análise da evolução.",
+    code: `relatorio_areas_degradadas_${n}`,
+    label: `Relatório Operacional de identificação de área degradada — Área ${n}`,
+    description:
+      "Relatório Operacional da área, contendo: identificação, coordenadas geográficas, diagnóstico do solo, da água e da vegetação, fatores que resultaram na degradação, registro fotográfico datado e georreferenciado, análise da evolução da degradação, mapa georreferenciado da área, quadro resumo (local, coordenadas, extensão em ha, tipo e fator gerador) e assinatura de responsável técnico habilitado. Preencha apenas as áreas identificadas. Relatórios deste item podem ser reutilizados por até 3 anos.",
     acceptsMultiple: true,
-    order: 1,
-  },
-  {
-    criteriaId: "C.2",
-    code: "mapa_areas_degradadas",
-    label: "Mapa georreferenciado das áreas degradadas",
-    description: "Mapa indicando as áreas degradadas identificadas.",
-    acceptsMultiple: true,
-    order: 2,
-  },
-  {
-    criteriaId: "C.2",
-    code: "quadro_resumo_degradadas",
-    label: "Quadro resumo de áreas degradadas",
-    description: "Tabela com identificação (local), coordenadas, extensão (ha), tipo e fator gerador da degradação, assinada por responsável técnico habilitado.",
-    acceptsMultiple: true,
-    order: 3,
-  },
+    order: n,
+  })),
 
-  // ── C.3 ──────────────────────────────────────────────────────────────────
-  {
+  // ── C.3 ── 4 relatórios operacionais (1 por área · 6 pts cada · máx. 24) ──
+  ...[1, 2, 3, 4].map((n) => ({
     criteriaId: "C.3",
-    code: "projeto_recuperacao",
-    label: "Projeto Técnico de Execução e Monitoramento (com ART)",
-    description: "Projeto técnico vinculado às áreas do C.2, com diagnóstico, metodologia, espécies utilizadas (mín. 3 nativas), quantitativos, espaçamento, cronograma e taxa de sobrevivência ≥50% após 45 dias.",
+    code: `relatorio_recuperacao_${n}`,
+    label: `Relatório Operacional de recuperação/monitoramento — Área ${n} (com ART)`,
+    description:
+      "Relatório Operacional da ação de recuperação e/ou monitoramento (por dois anos) da área degradada identificada no C.2, com ART ou equivalente. Deve conter diagnóstico da área (localização, coordenadas, extensão, tipo e fator gerador), metodologia detalhada, técnicas, materiais e meios empregados; se plantio, discriminação de no mínimo 3 espécies nativas representativas do bioma, quantitativo, espaçamento, cronograma e taxa mínima de sobrevivência ≥50% após 45 dias; data e local da execução; atividades realizadas; notas fiscais de insumos e mudas; registros fotográficos georreferenciados e datados antes, durante e depois; e demonstração analítica dos resultados (incluindo monitoramento, taxa de sobrevivência, análise comparativa com as metas e ações corretivas). Preencha apenas as áreas executadas.",
     acceptsMultiple: true,
-    order: 1,
-  },
-  {
-    criteriaId: "C.3",
-    code: "relatorio_recuperacao",
-    label: "Relatório Operacional de execução (com ART)",
-    description: "Relatório com data/local, atividades realizadas, quantitativo de mudas por espécie, notas fiscais de insumos e fotos georreferenciadas antes/durante/depois.",
-    acceptsMultiple: true,
-    order: 2,
-  },
-  {
-    criteriaId: "C.3",
-    code: "relatorio_monitoramento_c3",
-    label: "Relatório Técnico de Monitoramento (com ART)",
-    description: "Metodologia de avaliação, taxa de sobrevivência das mudas, análise comparativa com metas do projeto, ações corretivas, fotos georreferenciadas comparativas e comprovantes de manutenção.",
-    acceptsMultiple: true,
-    order: 3,
-  },
+    order: n,
+  })),
 
   // ── C.4 ──────────────────────────────────────────────────────────────────
   {
@@ -465,25 +394,10 @@ const subDocs: SubDocInput[] = [
     criteriaId: "C.5",
     code: "projeto_plantio_mudas",
     label: "Projeto Técnico de plantio (com ART)",
-    description: "Projeto assinado por responsável habilitado com localização georreferenciada, diagnóstico, metodologia (espaçamento, espécies nativas, cronograma) e plano de arborização.",
+    description:
+      "Projeto assinado por responsável habilitado (com ART ou equivalente), contendo localização georreferenciada dos pontos de plantio, diagnóstico da área, metodologia (espaçamento, espécies escolhidas, técnicas de plantio), diversidade de espécies nativas e/ou frutíferas, cronograma de execução e plano de arborização. Relatório Operacional e mapa entram como evidência.",
     acceptsMultiple: true,
     order: 1,
-  },
-  {
-    criteriaId: "C.5",
-    code: "relatorio_plantio_mudas",
-    label: "Relatório Operacional de plantio",
-    description: "Data e local, quantitativo por espécie, fotos georreferenciadas antes e depois, notas fiscais de mudas e insumos.",
-    acceptsMultiple: true,
-    order: 2,
-  },
-  {
-    criteriaId: "C.5",
-    code: "mapa_plantio_mudas",
-    label: "Mapa georreferenciado com pontos de plantio",
-    description: "Mapa com a distribuição dos pontos de plantio das mudas.",
-    acceptsMultiple: true,
-    order: 3,
   },
 
   // ── D.1 ──────────────────────────────────────────────────────────────────
