@@ -306,11 +306,11 @@ export function UsuariosTable({ initialData }: { initialData: UserItem[] }) {
       confirmStyle: "warning" as const,
     },
     delete: {
-      title: "Excluir permanentemente?",
-      description: `Esta a\u00e7ao e irreversivel. "${modal.name}" e todos os seus dados serao removidos para sempre.`,
-      confirmLabel: "Sim, excluir",
-      confirmStyle: "danger" as const,
-    },
+  title: "Excluir funcionário?",
+  description: `"${modal.name}" será removido do cadastro e não poderá mais acessar o sistema. Evidências e histórico permanecerão preservados.`,
+  confirmLabel: "Sim, excluir",
+  confirmStyle: "danger" as const,
+},
   };
 
   const cfg = modalConfig[modal.type];

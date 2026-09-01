@@ -10,15 +10,18 @@ export const metadata = { title: "Funcionários" };
 export default async function UsuariosPage() {
   await requireAdmin();
 
-  const users = await db.user.findMany({
-    where: { role: { in: ["employee", "reviewer"] } },
-    orderBy: { name: "asc" },
-    include: {
-      userMunicipalities: {
-        include: { municipality: { select: { name: true } } },
-      },
+ const users = await db.user.findMany({
+  where: {
+    role: { in: ["employee", "reviewer"] },
+    deletedAt: null,
+  },
+  orderBy: { name: "asc" },
+  include: {
+    userMunicipalities: {
+      include: { municipality: { select: { name: true } } },
     },
-  });
+  },
+});
 
   const activeCount = users.filter((u) => u.isActive).length;
 

@@ -149,7 +149,7 @@ model User {
   isActive           Boolean  @default(true) @map("is_active")
   avatarUrl          String?  @map("avatar_url")
   createdAt          DateTime @default(now()) @map("created_at")
-
+  deletedAt          DateTime? @map("deleted_at")
   auditLogs          AuditLog[]
   userMunicipalities UserMunicipality[]
   checklistUpdates   ChecklistItem[]    @relation("UpdatedBy")
