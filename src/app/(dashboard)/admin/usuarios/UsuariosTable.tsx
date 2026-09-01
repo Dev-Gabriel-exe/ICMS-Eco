@@ -258,7 +258,9 @@ export function UsuariosTable({ initialData }: { initialData: UserItem[] }) {
 
     try {
       if (type === "delete") {
-        const res = await fetch(`/api/users/${id}`, { method: "DELETE" });
+        const res = await fetch(`/api/users/${id}/hard-delete`, {
+  method: "DELETE",
+});
         const data = await res.json();
         if (!data.success) throw new Error(data.error ?? "Erro ao excluir.");
         setItems((prev) => prev.filter((u) => u.id !== id));
